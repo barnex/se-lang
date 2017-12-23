@@ -10,9 +10,10 @@ type Type int
 
 // All possible token types
 const (
-	tErr Type = iota // error, internal use only
-	TNum             // number
-	TEOF             // end-of-file
+	tErr   Type = iota // error, internal use only
+	TEOF               // end-of-file
+	TIdent             // identifier
+	TNum               // number
 )
 
 func (t Token) String() string {
@@ -20,7 +21,8 @@ func (t Token) String() string {
 }
 
 var tokenName = map[Type]string{
-	tErr: "Err",
-	TNum: "Num",
-	TEOF: "EOF",
+	tErr:   "Err",
+	TEOF:   "EOF",
+	TIdent: "Ident",
+	TNum:   "Num",
 }

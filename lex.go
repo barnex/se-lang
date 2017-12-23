@@ -21,9 +21,17 @@ func Lex(input string) ([]Token, error) {
 }
 
 const (
-	Digit      = "0123456789"
-	Whitespace = " \t"
 	EOF        = "\x00"
+	Whitespace = " \t"
+	Separator  = EOF + Whitespace
+
+	NonZero = "123456789"
+	Digit   = "0" + NonZero
+
+	Lower    = "abcdefghijklmnopqrstuvwxyz"
+	Upper    = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	Alpha    = Lower + Upper
+	AlphaNum = Alpha + Digit
 )
 
 func lex(input string) chan Token {
@@ -53,6 +61,8 @@ type stateFn func() stateFn
 func (l *lexer) lexStart() stateFn {
 	p := l.peek()
 	switch {
+	case is(p, Alpha):
+		return l.lexIdent()
 	case is(p, Digit):
 		return l.lexNum()
 	case is(p, Whitespace):
@@ -66,8 +76,19 @@ func (l *lexer) lexStart() stateFn {
 
 func (l *lexer) lexNum() stateFn {
 	l.acceptN(Digit)
+
+	if !is(l.peek(), Separator) {
+		return l.lexError("unexpected character")
+	}
 	l.emit(TNum)
 	return l.lexStart
+}
+
+func (l *lexer) lexIdent() stateFn {
+	l.accept1(Alpha)
+	l.acceptN(AlphaNum)
+	l.emit(TIdent)
+	return l.lexStart()
 }
 
 func (l *lexer) lexWhitespace() stateFn {
