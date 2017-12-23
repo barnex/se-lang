@@ -76,10 +76,7 @@ func (l *lexer) lexStart() stateFn {
 
 func (l *lexer) lexNum() stateFn {
 	l.acceptN(Digit)
-
-	if !is(l.peek(), Separator) {
-		return l.lexError("unexpected character")
-	}
+	l.acceptN(AlphaNum) // accept trailing crap, atoi will catch this
 	l.emit(TNum)
 	return l.lexStart
 }

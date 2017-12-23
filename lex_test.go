@@ -18,6 +18,7 @@ func TestLex(t *testing.T) {
 		{` 45 	678 `, []Token{{TNum, "45"}, {TNum, "678"}, {TEOF, ""}}},
 		{`x foo bar2`, []Token{{TIdent, "x"}, {TIdent, "foo"}, {TIdent, "bar2"}, {TEOF, ""}}},
 		{` x foo bar0 `, []Token{{TIdent, "x"}, {TIdent, "foo"}, {TIdent, "bar0"}, {TEOF, ""}}},
+		{`2x`, []Token{{TNum, "2x"}, {TEOF, ""}}}, // let atoi catch the syntax error
 	}
 
 	for _, c := range cases {
@@ -37,7 +38,7 @@ func TestError(t *testing.T) {
 		in   string
 		want string
 	}{
-		{`2x`, "unexpected character"},
+		{`$`, "illegal character"},
 	}
 
 	for _, c := range cases {
