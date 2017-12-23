@@ -124,7 +124,6 @@ func (l *lexer) emit(t Type) {
 		stop = len(l.input)
 	}
 
-	fmt.Println(l.start, l.pos, stop)
 	l.output <- Token{t, l.input[l.start:stop]}
 	l.start = l.pos
 }
