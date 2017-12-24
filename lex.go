@@ -27,6 +27,7 @@ func Lex(input string) ([]Token, error) {
 type Token struct {
 	TType
 	Value string
+	//Pos   int
 }
 
 // TType enumerates all token types.
@@ -34,11 +35,14 @@ type TType int
 
 // All possible token types
 const (
-	tErr        TType = iota // error, internal use, filtered from output
-	tWhitespace              // whitespace, internal use, filtered from output
-	TEOF                     // end-of-file
-	TIdent                   // identifier
-	TNum                     // number
+	TEOF        TType = 0 // end-of-file
+	TLParen     TType = '('
+	TRParen     TType = ')'
+	tErr        TType = 255         // error, internal use, filtered from output
+	tWhitespace TType = tErr + iota // whitespace, internal use, filtered from output
+	TIdent                          // identifier
+	TNum                            // number
+	TString                         // string
 )
 
 func (t Token) String() string {
@@ -58,7 +62,10 @@ var tokenName = map[TType]string{
 	tWhitespace: "Whitespace",
 	TEOF:        "EOF",
 	TIdent:      "Ident",
+	TLParen:     "LParen",
 	TNum:        "Num",
+	TRParen:     "RParen",
+	TString:     "String",
 }
 
 // lex
@@ -76,6 +83,9 @@ const (
 	Upper    = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	Alpha    = Lower + Upper
 	AlphaNum = Alpha + Digit
+
+	Delim = "()"
+	Quote = `"`
 )
 
 type lexer struct {
@@ -102,16 +112,20 @@ func (l *lexer) lexAll() []Token {
 func (l *lexer) lexToken() Token {
 	p := l.peek()
 	switch {
+	default:
+		return l.lexError("illegal character")
 	case is(p, Alpha):
 		return l.lexIdent()
 	case is(p, Digit):
 		return l.lexNum()
 	case is(p, Whitespace):
 		return l.lexWhitespace()
+	case is(p, Delim):
+		return l.lexDelim()
 	case is(p, EOF):
 		return l.lexEOF()
-	default:
-		return l.lexError("illegal character")
+	case is(p, Quote):
+		return l.lexString()
 	}
 }
 
@@ -122,7 +136,7 @@ func (l *lexer) lexNum() Token {
 }
 
 func (l *lexer) lexIdent() Token {
-	l.accept1(Alpha)
+	l.accept(Alpha)
 	l.acceptN(AlphaNum)
 	return l.emit(TIdent)
 }
@@ -132,14 +146,38 @@ func (l *lexer) lexWhitespace() Token {
 	return l.emit(tWhitespace)
 }
 
+func (l *lexer) lexDelim() Token {
+	l.accept(Delim)
+	t := l.emit(0)
+	t.TType = TType(t.Value[0])
+	return t
+}
+
+func (l *lexer) lexString() Token {
+	l.accept(Quote)
+	p := l.peek()
+	for p != '"' && p != 0 {
+		l.acceptAny()
+		p = l.peek()
+	}
+
+	// TODO: expect
+	if l.peek() != '"' {
+		return l.lexError("unterminated string")
+	}
+	l.accept(Quote)
+
+	return l.emit(TString)
+}
+
 func (l *lexer) lexEOF() Token {
-	l.accept1(EOF)
+	l.accept(EOF)
 	return l.emit(TEOF)
 }
 
 func (l *lexer) lexError(msg string) Token {
 	tok := l.emit(tErr)
-	tok.Value = fmt.Sprintf("pos %v: %q: %v", l.pos, tok.Value, msg)
+	tok.Value = fmt.Sprintf("pos %v: %v: %v", l.pos, tok.Value, msg)
 	return tok
 }
 
@@ -155,24 +193,26 @@ func (l *lexer) peek() byte {
 const bEOF = 0
 
 func (l *lexer) acceptN(set string) {
-	for l.accept1(set) {
+	for l.accept(set) {
 	}
 }
 
-func (l *lexer) accept1(set string) bool {
+func (l *lexer) accept(set string) bool {
 	if is(l.peek(), set) {
-		l.accept()
+		l.pos++
 		return true
 	}
 	return false
 }
 
-func (l *lexer) accept() {
+func (l *lexer) acceptAny() {
 	l.pos++
 }
 
 //----------------------------------------------
 
+// emit returns a token for the current position,
+// and advances the position.
 func (l *lexer) emit(t TType) Token {
 	// do not emit out-of-bounds
 	stop := l.pos
@@ -186,8 +226,7 @@ func (l *lexer) emit(t TType) Token {
 
 //----------------------------------------------
 
-// is returns whether set contains x.
-// E.g.:
+// is returns whether set contains x. E.g.:
 // 	is('2', Digit) // true
 // 	is('a', Digit) // false
 func is(x byte, set string) bool {

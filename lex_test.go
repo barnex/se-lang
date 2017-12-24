@@ -19,16 +19,19 @@ func TestLex(t *testing.T) {
 		{`x foo bar2`, []Token{{TIdent, "x"}, {TIdent, "foo"}, {TIdent, "bar2"}, {TEOF, ""}}},
 		{` x foo bar0 `, []Token{{TIdent, "x"}, {TIdent, "foo"}, {TIdent, "bar0"}, {TEOF, ""}}},
 		{`2x`, []Token{{TNum, "2x"}, {TEOF, ""}}}, // let atoi catch the syntax error
+		{`((foo )`, []Token{{TLParen, "("}, {TLParen, "("}, {TIdent, "foo"}, {TRParen, ")"}, {TEOF, ""}}},
+		{` " a 1 () "`, []Token{{TString, `" a 1 () "`}, {TEOF, ""}}},
+		{`""`, []Token{{TString, `""`}, {TEOF, ""}}},
 	}
 
 	for _, c := range cases {
 		have, err := Lex(c.in)
 		if err != nil {
-			t.Errorf("%q: error: %v", c.in, err)
+			t.Errorf("%v: error: %v", c.in, err)
 			continue
 		}
 		if !reflect.DeepEqual(have, c.want) {
-			t.Errorf("%q: have %v, want %v", c.in, have, c.want)
+			t.Errorf("%v: have %v, want %v", c.in, have, c.want)
 		}
 	}
 }
@@ -39,16 +42,18 @@ func TestError(t *testing.T) {
 		want string
 	}{
 		{`$`, "illegal character"},
+		{`"`, "unterminated string"},
+		{`"""`, "unterminated string"},
 	}
 
 	for _, c := range cases {
 		_, err := Lex(c.in)
 		if err == nil {
-			t.Errorf("%q: expected error", c.in)
+			t.Errorf("%v: expected error", c.in)
 			continue
 		}
 		if !strings.Contains(err.Error(), c.want) {
-			t.Errorf("%q: have: %q, want: %q", c.in, err.Error(), c.want)
+			t.Errorf("%v: have: %v, want: %v", c.in, err.Error(), c.want)
 		}
 	}
 }
