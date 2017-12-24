@@ -8,16 +8,23 @@ import (
 	"strings"
 )
 
-// Lex turns a string into tokens.
 func Lex(input string) ([]Token, error) {
-	var tokens []Token
-	for t := range lex(input) {
-		if t.Type == tErr {
-			return nil, errors.New(t.Value)
-		}
-		tokens = append(tokens, t)
+	l := &lexer{input: input}
+
+	for state := l.lexStart; state != nil; {
+		state = state()
 	}
-	return tokens, nil
+
+	if last := l.output[len(l.output)-1]; last.Type == tErr {
+		return nil, errors.New(last.Value)
+	}
+	return l.output, nil
+}
+
+type lexer struct {
+	input      string
+	output     []Token
+	start, pos int
 }
 
 const (
@@ -33,28 +40,6 @@ const (
 	Alpha    = Lower + Upper
 	AlphaNum = Alpha + Digit
 )
-
-func lex(input string) chan Token {
-	l := &lexer{
-		input:  input,
-		output: make(chan Token),
-	}
-	go l.run()
-	return l.output
-}
-
-type lexer struct {
-	input      string
-	output     chan Token
-	start, pos int
-}
-
-func (l *lexer) run() {
-	for state := l.lexStart; state != nil; {
-		state = state()
-	}
-	close(l.output)
-}
 
 type stateFn func() stateFn
 
@@ -142,7 +127,7 @@ func (l *lexer) emit(t Type) {
 		stop = len(l.input)
 	}
 
-	l.output <- Token{t, l.input[l.start:stop]}
+	l.output = append(l.output, Token{t, l.input[l.start:stop]})
 	l.start = l.pos
 }
 
@@ -151,7 +136,7 @@ func (l *lexer) emitNone() {
 }
 
 func (l *lexer) emitError(msg string) {
-	l.output <- Token{tErr, msg}
+	l.output = append(l.output, Token{tErr, msg})
 }
 
 // is returns whether set contains x.
