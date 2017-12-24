@@ -10,33 +10,59 @@ import (
 	"strings"
 )
 
+// Lex splits a string in tokens.
 func Lex(input string) ([]Token, error) {
-	return (&lexer{input: input}).lex()
-}
-
-//----------------------------------------------
-
-type lexer struct {
-	input      string
-	output     []Token
-	start, pos int
-}
-
-func (l *lexer) lex() ([]Token, error) {
-	for state := l.lexStart; state != nil; {
-		state = state()
-	}
-
-	return l.cleanOutput()
-}
-
-// cleanOutput returns the lexer's output unless there is a error token.
-func (l *lexer) cleanOutput() ([]Token, error) {
-	if last := l.output[len(l.output)-1]; last.Type == tErr {
+	out := (&lexer{input: input}).lexAll()
+	// if we have an error token, return error explicitly
+	if last := out[len(out)-1]; last.TType == tErr {
 		return nil, errors.New(last.Value)
 	}
-	return l.output, nil
+	return out, nil
 }
+
+// token
+//----------------------------------------------
+
+// A Token represents a textual element like a word, number, ...
+type Token struct {
+	TType
+	Value string
+}
+
+// TType enumerates all token types.
+type TType int
+
+// All possible token types
+const (
+	tErr        TType = iota // error, internal use, filtered from output
+	tWhitespace              // whitespace, internal use, filtered from output
+	TEOF                     // end-of-file
+	TIdent                   // identifier
+	TNum                     // number
+)
+
+func (t Token) String() string {
+	return t.TType.String() + "(" + t.Value + ")"
+}
+
+func (t TType) String() string {
+	n, ok := tokenName[t]
+	if !ok {
+		return fmt.Sprint("BAD_TYPE_", int(t))
+	}
+	return n
+}
+
+var tokenName = map[TType]string{
+	tErr:        "Err",
+	tWhitespace: "Whitespace",
+	TEOF:        "EOF",
+	TIdent:      "Ident",
+	TNum:        "Num",
+}
+
+// lex
+//----------------------------------------------
 
 const (
 	EOF        = "\x00"
@@ -52,9 +78,28 @@ const (
 	AlphaNum = Alpha + Digit
 )
 
-type stateFn func() stateFn
+type lexer struct {
+	input      string
+	start, pos int
+}
 
-func (l *lexer) lexStart() stateFn {
+func (l *lexer) lexAll() []Token {
+	var out []Token
+	for {
+		t := l.lexToken()
+		switch t.TType {
+		default:
+			out = append(out, t)
+		case tWhitespace: // ignore
+		case TEOF, tErr:
+			out = append(out, t)
+			return out
+		}
+	}
+	return out
+}
+
+func (l *lexer) lexToken() Token {
 	p := l.peek()
 	switch {
 	case is(p, Alpha):
@@ -70,35 +115,32 @@ func (l *lexer) lexStart() stateFn {
 	}
 }
 
-func (l *lexer) lexNum() stateFn {
+func (l *lexer) lexNum() Token {
 	l.acceptN(Digit)
 	l.acceptN(AlphaNum) // accept trailing crap, atoi will catch this
-	l.emit(TNum)
-	return l.lexStart
+	return l.emit(TNum)
 }
 
-func (l *lexer) lexIdent() stateFn {
+func (l *lexer) lexIdent() Token {
 	l.accept1(Alpha)
 	l.acceptN(AlphaNum)
-	l.emit(TIdent)
-	return l.lexStart()
+	return l.emit(TIdent)
 }
 
-func (l *lexer) lexWhitespace() stateFn {
+func (l *lexer) lexWhitespace() Token {
 	l.acceptN(Whitespace)
-	l.emitNone()
-	return l.lexStart
+	return l.emit(tWhitespace)
 }
 
-func (l *lexer) lexEOF() stateFn {
+func (l *lexer) lexEOF() Token {
 	l.accept1(EOF)
-	l.emit(TEOF)
-	return nil
+	return l.emit(TEOF)
 }
 
-func (l *lexer) lexError(msg string) stateFn {
-	l.emitError(fmt.Sprintf("pos %v: %v", l.pos, msg))
-	return nil
+func (l *lexer) lexError(msg string) Token {
+	tok := l.emit(tErr)
+	tok.Value = fmt.Sprintf("pos %v: %q: %v", l.pos, tok.Value, msg)
+	return tok
 }
 
 //----------------------------------------------
@@ -131,23 +173,15 @@ func (l *lexer) accept() {
 
 //----------------------------------------------
 
-func (l *lexer) emit(t Type) {
+func (l *lexer) emit(t TType) Token {
 	// do not emit out-of-bounds
 	stop := l.pos
 	if stop > len(l.input) {
 		stop = len(l.input)
 	}
-
-	l.output = append(l.output, Token{t, l.input[l.start:stop]})
+	tok := Token{t, l.input[l.start:stop]}
 	l.start = l.pos
-}
-
-func (l *lexer) emitNone() {
-	l.start = l.pos
-}
-
-func (l *lexer) emitError(msg string) {
-	l.output = append(l.output, Token{tErr, msg})
+	return tok
 }
 
 //----------------------------------------------
