@@ -1,4 +1,6 @@
-// inspired by https://talks.golang.org/2011/lex.slide and https://golang.org/src/text/template/parse/lex.go
+// inspired by
+// https://talks.golang.org/2011/lex.slide and
+// https://golang.org/src/text/template/parse/lex.go
 
 package main
 
@@ -9,22 +11,31 @@ import (
 )
 
 func Lex(input string) ([]Token, error) {
-	l := &lexer{input: input}
-
-	for state := l.lexStart; state != nil; {
-		state = state()
-	}
-
-	if last := l.output[len(l.output)-1]; last.Type == tErr {
-		return nil, errors.New(last.Value)
-	}
-	return l.output, nil
+	return (&lexer{input: input}).lex()
 }
+
+//----------------------------------------------
 
 type lexer struct {
 	input      string
 	output     []Token
 	start, pos int
+}
+
+func (l *lexer) lex() ([]Token, error) {
+	for state := l.lexStart; state != nil; {
+		state = state()
+	}
+
+	return l.cleanOutput()
+}
+
+// cleanOutput returns the lexer's output unless there is a error token.
+func (l *lexer) cleanOutput() ([]Token, error) {
+	if last := l.output[len(l.output)-1]; last.Type == tErr {
+		return nil, errors.New(last.Value)
+	}
+	return l.output, nil
 }
 
 const (
@@ -90,7 +101,7 @@ func (l *lexer) lexError(msg string) stateFn {
 	return nil
 }
 
-//
+//----------------------------------------------
 
 func (l *lexer) peek() byte {
 	if l.pos >= len(l.input) {
@@ -118,7 +129,7 @@ func (l *lexer) accept() {
 	l.pos++
 }
 
-//
+//----------------------------------------------
 
 func (l *lexer) emit(t Type) {
 	// do not emit out-of-bounds
@@ -138,6 +149,8 @@ func (l *lexer) emitNone() {
 func (l *lexer) emitError(msg string) {
 	l.output = append(l.output, Token{tErr, msg})
 }
+
+//----------------------------------------------
 
 // is returns whether set contains x.
 // E.g.:
