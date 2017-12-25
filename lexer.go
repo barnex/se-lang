@@ -36,6 +36,7 @@ type TType int
 // All possible token types
 const (
 	TEOF        TType = 0 // end-of-file
+	TComma      TType = ','
 	TLParen     TType = '('
 	TRParen     TType = ')'
 	tErr        TType = 255         // error, internal use, filtered from output
@@ -60,6 +61,7 @@ func (t TType) String() string {
 var tokenName = map[TType]string{
 	tErr:        "Err",
 	tWhitespace: "whitespace",
+	TComma:      ",",
 	TEOF:        "EOF",
 	TIdent:      "identifier",
 	TLParen:     "(",
@@ -84,7 +86,7 @@ const (
 	Alpha    = Lower + Upper
 	AlphaNum = Alpha + Digit
 
-	Delim = "()"
+	Delim = "(),"
 	Quote = `"`
 )
 

@@ -11,10 +11,18 @@ func TestParseExpr(t *testing.T) {
 		in   string
 		want Expr
 	}{
-		{`1`, Num{1}},
-		{` 1 `, Num{1}},
-		{`(1)`, Num{1}},
-		{` ( 1 ) `, Num{1}},
+		{`1`, num(1)},
+		{` 1 `, num(1)},
+		{`(1)`, num(1)},
+		{` ( 1 ) `, num(1)},
+		{`f`, ident("f")},
+		{`f()`, call(ident("f"))},
+		{`f(x)`, call(ident("f"), ident("x"))},
+		{`f((x))`, call(ident("f"), ident("x"))},
+		{`(f)(x)`, call(ident("f"), ident("x"))},
+		{`f(x)(y)`, call(call(ident("f"), ident("x")), ident("y"))},
+		{`f(x,y)`, call(ident("f"), ident("x"), ident("y"))},
+		{`f(x,y,)`, call(ident("f"), ident("x"), ident("y"))},
 	}
 
 	for _, c := range cases {
@@ -35,6 +43,10 @@ func TestParseError(t *testing.T) {
 		`1)`,
 		` ( 1 `,
 		` 1 ) `,
+		`f(x`,
+		`f(x))`,
+		`f(x y)`,
+		`f(,)`,
 	}
 
 	for _, c := range cases {
@@ -45,3 +57,7 @@ func TestParseError(t *testing.T) {
 		}
 	}
 }
+
+func num(v float64) Expr             { return Num{v} }
+func ident(n string) Expr            { return Ident{n} }
+func call(f Expr, args ...Expr) Expr { return Call{f, args} }
