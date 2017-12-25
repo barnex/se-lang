@@ -5,21 +5,6 @@ import (
 	"strconv"
 )
 
-type Expr interface{}
-
-type Num struct {
-	Value float64
-}
-
-type Ident struct {
-	Name string
-}
-
-type Call struct {
-	Op   Expr
-	Args []Expr
-}
-
 func Parse(in string) (ex Expr, err error) {
 	// catch errors
 	defer func() {
@@ -78,7 +63,7 @@ func (p *parser) parseExpr() Expr {
 	// call expression
 	for p.peek().TType == TLParen {
 		args := p.parseArgs()
-		expr = Call{expr, args}
+		expr = &Call{expr, args}
 	}
 	return expr
 }
@@ -108,7 +93,7 @@ func (p *parser) parseArgs() []Expr {
 // 	foo
 func (p *parser) parseIdent() Expr {
 	tok := p.expect(TIdent)
-	return Ident{tok.Value}
+	return &Ident{tok.Value}
 }
 
 // parseNum parses a number, like:
@@ -119,7 +104,7 @@ func (p *parser) parseNum() Expr {
 	if err != nil {
 		p.errorf("%v", err)
 	}
-	return Num{v}
+	return &Num{v}
 }
 
 // parseParenExpr parses a parenthesised expression, like:

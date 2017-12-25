@@ -37,6 +37,35 @@ func TestParseExpr(t *testing.T) {
 	}
 }
 
+func TestParseToString(t *testing.T) {
+
+	cases := []struct {
+		in   string
+		want string
+	}{
+		{` 1 `, `1`},
+		{` (1) `, `1`},
+		{`f`, `f`},
+		{`f()`, `f()`},
+		{`f(x)`, `f(x)`},
+		{`f((x))`, `f(x)`},
+		{`(f)(x)`, `f(x)`},
+		{`f(x)(y)`, `f(x)(y)`},
+		{`(f)(x,y,)`, `f(x,y)`},
+	}
+
+	for _, c := range cases {
+		have, err := Parse(c.in)
+		if err != nil {
+			t.Errorf("%v: error: %v", c.in, err)
+			continue
+		}
+		if have := have.String(); have != c.want {
+			t.Errorf("%v: have %v, want %v", c.in, have, c.want)
+		}
+	}
+}
+
 func TestParseError(t *testing.T) {
 	cases := []string{
 		`(1`,
@@ -47,6 +76,9 @@ func TestParseError(t *testing.T) {
 		`f(x))`,
 		`f(x y)`,
 		`f(,)`,
+		`f g`,
+		`f(g) x`,
+		`1 2`,
 	}
 
 	for _, c := range cases {
@@ -58,6 +90,6 @@ func TestParseError(t *testing.T) {
 	}
 }
 
-func num(v float64) Expr             { return Num{v} }
-func ident(n string) Expr            { return Ident{n} }
-func call(f Expr, args ...Expr) Expr { return Call{f, args} }
+func num(v float64) Expr             { return &Num{v} }
+func ident(n string) Expr            { return &Ident{n} }
+func call(f Expr, args ...Expr) Expr { return &Call{f, args} }
