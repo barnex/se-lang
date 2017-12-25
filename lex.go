@@ -59,13 +59,13 @@ func (t TType) String() string {
 
 var tokenName = map[TType]string{
 	tErr:        "Err",
-	tWhitespace: "Whitespace",
+	tWhitespace: "whitespace",
 	TEOF:        "EOF",
-	TIdent:      "Ident",
-	TLParen:     "LParen",
-	TNum:        "Num",
-	TRParen:     "RParen",
-	TString:     "String",
+	TIdent:      "identifier",
+	TLParen:     "(",
+	TNum:        "number",
+	TRParen:     ")",
+	TString:     "string",
 }
 
 // lex
