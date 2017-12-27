@@ -20,14 +20,15 @@ func Lex(input string) ([]Token, error) {
 	return out, nil
 }
 
-// token
-//----------------------------------------------
-
 // A Token represents a textual element like a word, number, ...
 type Token struct {
 	TType
 	Value string
 	//Pos   int
+}
+
+func (t Token) String() string {
+	return t.TType.String() + "(" + t.Value + ")"
 }
 
 // TType enumerates all token types.
@@ -50,19 +51,15 @@ const (
 	TString                         // string
 )
 
-func (t Token) String() string {
-	return t.TType.String() + "(" + t.Value + ")"
-}
-
 func (t TType) String() string {
-	n, ok := tokenName[t]
+	n, ok := ttypeName[t]
 	if !ok {
 		return fmt.Sprint("BAD_TYPE_", int(t))
 	}
 	return n
 }
 
-var tokenName = map[TType]string{
+var ttypeName = map[TType]string{
 	tErr:        "Err",
 	tWhitespace: "whitespace",
 	TComma:      ",",
@@ -103,14 +100,21 @@ type lexer struct {
 	start, pos int
 }
 
+func (l *lexer) Next() Token {
+	t := l.lexToken()
+	if t.TType == tWhitespace {
+		return l.Next()
+	}
+	return t
+}
+
 func (l *lexer) lexAll() []Token {
 	var out []Token
 	for {
-		t := l.lexToken()
+		t := l.Next()
 		switch t.TType {
 		default:
 			out = append(out, t)
-		case tWhitespace: // ignore
 		case TEOF, tErr:
 			out = append(out, t)
 			return out
