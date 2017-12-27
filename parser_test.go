@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+// Parse expressions and compare to the expected AST.
 func TestParseExpr(t *testing.T) {
 
 	cases := []struct {
@@ -23,6 +24,7 @@ func TestParseExpr(t *testing.T) {
 		{`f(x)(y)`, call(call(ident("f"), ident("x")), ident("y"))},
 		{`f(x,y)`, call(ident("f"), ident("x"), ident("y"))},
 		{`f(x,y,)`, call(ident("f"), ident("x"), ident("y"))},
+		{`1+2+3`, call(ident("+"), call(ident("+"), num(1), num(2)), num(3))},
 	}
 
 	for _, c := range cases {
@@ -37,6 +39,7 @@ func TestParseExpr(t *testing.T) {
 	}
 }
 
+// Parse expressions and turn the AST's to strings.
 func TestParseToString(t *testing.T) {
 
 	cases := []struct {
@@ -52,6 +55,11 @@ func TestParseToString(t *testing.T) {
 		{`(f)(x)`, `f(x)`},
 		{`f(x)(y)`, `f(x)(y)`},
 		{`(f)(x,y,)`, `f(x,y)`},
+		{`x+y`, `+(x,y)`},
+		{`x*y`, `*(x,y)`},
+		{`a+b*c`, `+(a,*(b,c))`},
+		{`a*b+c`, `+(*(a,b),c)`},
+		{`a*(b+c)`, `*(a,+(b,c))`},
 	}
 
 	for _, c := range cases {
@@ -66,6 +74,7 @@ func TestParseToString(t *testing.T) {
 	}
 }
 
+// Ensure parse errors on bad input.
 func TestParseError(t *testing.T) {
 	cases := []string{
 		`(1`,

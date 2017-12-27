@@ -39,11 +39,32 @@ func (p *parser) parseProgram() Expr {
 	return e
 }
 
-// parseExpr parses an expression, like:
-// 	(1+2)*3
-// 	f(x,y)
-// 	f()()
 func (p *parser) parseExpr() Expr {
+	return p.parseBinary(1)
+}
+
+// inspired by https://github.com/adonovan/gopl.io/blob/master/ch7/eval/parse.go#L87
+func (p *parser) parseBinary(prec1 int) Expr {
+	lhs := p.parsePrimary()
+
+	for prec := precedence[p.peek().TType]; prec >= prec1; prec-- {
+		for precedence[p.peek().TType] == prec {
+			op := p.advance()
+			rhs := p.parseBinary(prec + 1)
+			lhs = &Call{
+				Func: &Ident{op.Value},
+				Args: []Expr{lhs, rhs},
+			}
+		}
+	}
+	return lhs
+}
+
+// primary = ident
+//         | num
+//         | (expr)
+//         | call
+func (p *parser) parsePrimary() Expr {
 	var expr Expr
 
 	// non-call expression
@@ -65,7 +86,20 @@ func (p *parser) parseExpr() Expr {
 		args := p.parseArgs()
 		expr = &Call{expr, args}
 	}
+
 	return expr
+}
+
+func isInfix(t TType) bool {
+	_, ok := precedence[t]
+	return ok
+}
+
+var precedence = map[TType]int{
+	TAdd:   1,
+	TMinus: 1,
+	TMul:   2,
+	TDiv:   2,
 }
 
 // parseArgs parses an argument list, like:
@@ -140,8 +174,10 @@ func (p *parser) accept(typ TType) Token {
 	return tok
 }
 
-func (p *parser) advance() {
+func (p *parser) advance() Token {
+	tok := p.peek()
 	p.pos++
+	return tok
 }
 
 func (p *parser) errorf(format string, x ...interface{}) {

@@ -39,6 +39,10 @@ const (
 	TComma      TType = ','
 	TLParen     TType = '('
 	TRParen     TType = ')'
+	TAdd        TType = '+'
+	TDiv        TType = '/'
+	TMinus      TType = '-'
+	TMul        TType = '*'
 	tErr        TType = 255         // error, internal use, filtered from output
 	tWhitespace TType = tErr + iota // whitespace, internal use, filtered from output
 	TIdent                          // identifier
@@ -68,6 +72,10 @@ var tokenName = map[TType]string{
 	TNum:        "number",
 	TRParen:     ")",
 	TString:     "string",
+	TAdd:        "+",
+	TDiv:        "/",
+	TMinus:      "-",
+	TMul:        "*",
 }
 
 // lex
@@ -86,7 +94,7 @@ const (
 	Alpha    = Lower + Upper
 	AlphaNum = Alpha + Digit
 
-	Delim = "(),"
+	Delim = "(),+-*/"
 	Quote = `"`
 )
 

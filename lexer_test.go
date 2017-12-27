@@ -22,6 +22,7 @@ func TestLex(t *testing.T) {
 		{`((foo )`, []Token{{TLParen, "("}, {TLParen, "("}, {TIdent, "foo"}, {TRParen, ")"}, {TEOF, ""}}},
 		{` " a 1 () "`, []Token{{TString, `" a 1 () "`}, {TEOF, ""}}},
 		{`""`, []Token{{TString, `""`}, {TEOF, ""}}},
+		{`a+b*c`, []Token{{TIdent, "a"}, {TAdd, "+"}, {TIdent, "b"}, {TMul, "*"}, {TIdent, "c"}, {TEOF, ""}}},
 	}
 
 	for _, c := range cases {
