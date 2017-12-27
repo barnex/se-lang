@@ -18,7 +18,7 @@ func Parse(in string) (ex Expr, err error) {
 	}()
 
 	// lex
-	tokens, err := LexAll(in)
+	tokens, err := lexAll(in)
 	if err != nil {
 		return nil, err
 	}

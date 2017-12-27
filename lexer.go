@@ -9,32 +9,21 @@ import (
 	"strings"
 )
 
-// LexAll splits a string in tokens.
-func LexAll(input string) (t []Token, e error) {
-	defer func() {
-		switch err := recover().(type) {
-		default:
-			panic(err) // resume
-		case nil:
-			// no error
-		case SyntaxError:
-			t = nil
-			e = err
-		}
-	}()
-	l := &lexer{input: input}
-	var out []Token
-	for {
-		t := l.Next()
-		switch t.TType {
-		default:
-			out = append(out, t)
-		case TEOF, tErr:
-			out = append(out, t)
-			return out, nil
-		}
+type Lexer struct {
+	input      string
+	start, pos int
+}
+
+func Lex(input string) *Lexer {
+	return &Lexer{input: input}
+}
+
+func (l *Lexer) Next() Token {
+	t := l.lexToken()
+	if t.TType == tWhitespace {
+		return l.Next()
 	}
-	return out, nil
+	return t
 }
 
 // A Token represents a textual element like a word, number, ...
@@ -112,20 +101,7 @@ const (
 	Quote = `"`
 )
 
-type lexer struct {
-	input      string
-	start, pos int
-}
-
-func (l *lexer) Next() Token {
-	t := l.lexToken()
-	if t.TType == tWhitespace {
-		return l.Next()
-	}
-	return t
-}
-
-func (l *lexer) lexToken() Token {
+func (l *Lexer) lexToken() Token {
 	p := l.peek()
 	switch {
 	default:
@@ -146,31 +122,31 @@ func (l *lexer) lexToken() Token {
 	}
 }
 
-func (l *lexer) lexNum() Token {
+func (l *Lexer) lexNum() Token {
 	l.acceptN(Digit)
 	l.acceptN(AlphaNum) // accept trailing crap, atoi will catch this
 	return l.emit(TNum)
 }
 
-func (l *lexer) lexIdent() Token {
+func (l *Lexer) lexIdent() Token {
 	l.accept(Alpha)
 	l.acceptN(AlphaNum)
 	return l.emit(TIdent)
 }
 
-func (l *lexer) lexWhitespace() Token {
+func (l *Lexer) lexWhitespace() Token {
 	l.acceptN(Whitespace)
 	return l.emit(tWhitespace)
 }
 
-func (l *lexer) lexDelim() Token {
+func (l *Lexer) lexDelim() Token {
 	l.accept(Delim)
 	t := l.emit(0)
 	t.TType = TType(t.Value[0])
 	return t
 }
 
-func (l *lexer) lexString() Token {
+func (l *Lexer) lexString() Token {
 	l.accept(Quote)
 	p := l.peek()
 	for p != '"' && p != 0 {
@@ -187,18 +163,18 @@ func (l *lexer) lexString() Token {
 	return l.emit(TString)
 }
 
-func (l *lexer) lexEOF() Token {
+func (l *Lexer) lexEOF() Token {
 	l.accept(EOF)
 	return l.emit(TEOF)
 }
 
-func (l *lexer) lexError(msg string) {
+func (l *Lexer) lexError(msg string) {
 	panic(SyntaxError{fmt.Sprint("pos %v: %v", l.pos, msg)})
 }
 
 //----------------------------------------------
 
-func (l *lexer) peek() byte {
+func (l *Lexer) peek() byte {
 	if l.pos >= len(l.input) {
 		return bEOF
 	}
@@ -207,12 +183,12 @@ func (l *lexer) peek() byte {
 
 const bEOF = 0
 
-func (l *lexer) acceptN(set string) {
+func (l *Lexer) acceptN(set string) {
 	for l.accept(set) {
 	}
 }
 
-func (l *lexer) accept(set string) bool {
+func (l *Lexer) accept(set string) bool {
 	if is(l.peek(), set) {
 		l.pos++
 		return true
@@ -220,7 +196,7 @@ func (l *lexer) accept(set string) bool {
 	return false
 }
 
-func (l *lexer) acceptAny() {
+func (l *Lexer) acceptAny() {
 	l.pos++
 }
 
@@ -228,7 +204,7 @@ func (l *lexer) acceptAny() {
 
 // emit returns a token for the current position,
 // and advances the position.
-func (l *lexer) emit(t TType) Token {
+func (l *Lexer) emit(t TType) Token {
 	// do not emit out-of-bounds
 	stop := l.pos
 	if stop > len(l.input) {

@@ -26,7 +26,7 @@ func TestLex(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		have, err := LexAll(c.in)
+		have, err := lexAll(c.in)
 		if err != nil {
 			t.Errorf("%v: error: %v", c.in, err)
 			continue
@@ -48,7 +48,7 @@ func TestError(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		_, err := LexAll(c.in)
+		_, err := lexAll(c.in)
 		if err == nil {
 			t.Errorf("%v: expected error", c.in)
 			continue
@@ -57,4 +57,34 @@ func TestError(t *testing.T) {
 			t.Errorf("%v: have: %v, want: %v", c.in, err.Error(), c.want)
 		}
 	}
+}
+
+// lexAll splits a string in tokens.
+func lexAll(input string) (t []Token, e error) {
+	// catch syntax errors
+	defer func() {
+		switch err := recover().(type) {
+		default:
+			panic(err) // resume
+		case nil:
+			// no error
+		case SyntaxError:
+			t = nil
+			e = err
+		}
+	}()
+	l := Lex(input)
+
+	// read all tokens
+	var out []Token
+	tok := l.Next()
+	for {
+		out = append(out, tok)
+		if tok.TType == TEOF {
+			break
+		}
+		tok = l.Next()
+	}
+
+	return out, nil
 }
