@@ -5,17 +5,34 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
 
-// Lex splits a string in tokens.
-func Lex(input string) ([]Token, error) {
-	out := (&lexer{input: input}).lexAll()
-	// if we have an error token, return error explicitly
-	if last := out[len(out)-1]; last.TType == tErr {
-		return nil, errors.New(last.Value)
+// LexAll splits a string in tokens.
+func LexAll(input string) (t []Token, e error) {
+	defer func() {
+		switch err := recover().(type) {
+		default:
+			panic(err) // resume
+		case nil:
+			// no error
+		case SyntaxError:
+			t = nil
+			e = err
+		}
+	}()
+	l := &lexer{input: input}
+	var out []Token
+	for {
+		t := l.Next()
+		switch t.TType {
+		default:
+			out = append(out, t)
+		case TEOF, tErr:
+			out = append(out, t)
+			return out, nil
+		}
 	}
 	return out, nil
 }
@@ -108,26 +125,12 @@ func (l *lexer) Next() Token {
 	return t
 }
 
-func (l *lexer) lexAll() []Token {
-	var out []Token
-	for {
-		t := l.Next()
-		switch t.TType {
-		default:
-			out = append(out, t)
-		case TEOF, tErr:
-			out = append(out, t)
-			return out
-		}
-	}
-	return out
-}
-
 func (l *lexer) lexToken() Token {
 	p := l.peek()
 	switch {
 	default:
-		return l.lexError("illegal character")
+		l.lexError("illegal character")
+		panic("unreachable")
 	case is(p, Alpha):
 		return l.lexIdent()
 	case is(p, Digit):
@@ -177,7 +180,7 @@ func (l *lexer) lexString() Token {
 
 	// TODO: expect
 	if l.peek() != '"' {
-		return l.lexError("unterminated string")
+		l.lexError("unterminated string")
 	}
 	l.accept(Quote)
 
@@ -189,10 +192,8 @@ func (l *lexer) lexEOF() Token {
 	return l.emit(TEOF)
 }
 
-func (l *lexer) lexError(msg string) Token {
-	tok := l.emit(tErr)
-	tok.Value = fmt.Sprintf("pos %v: %v: %v", l.pos, tok.Value, msg)
-	return tok
+func (l *lexer) lexError(msg string) {
+	panic(SyntaxError{fmt.Sprint("pos %v: %v", l.pos, msg)})
 }
 
 //----------------------------------------------

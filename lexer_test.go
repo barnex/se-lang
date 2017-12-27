@@ -26,7 +26,7 @@ func TestLex(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		have, err := Lex(c.in)
+		have, err := LexAll(c.in)
 		if err != nil {
 			t.Errorf("%v: error: %v", c.in, err)
 			continue
@@ -48,7 +48,7 @@ func TestError(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		_, err := Lex(c.in)
+		_, err := LexAll(c.in)
 		if err == nil {
 			t.Errorf("%v: expected error", c.in)
 			continue
