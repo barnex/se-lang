@@ -1,7 +1,8 @@
-package main
+package e
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -27,10 +28,10 @@ func TestParseExpr(t *testing.T) {
 		{`1+2+3`, call(ident("+"), call(ident("+"), num(1), num(2)), num(3))},
 	}
 
-	for _, c := range cases {
-		have, err := Parse(c.in)
+	for i, c := range cases {
+		have, err := parse(c.in)
 		if err != nil {
-			t.Errorf("%v: error: %v", c.in, err)
+			t.Errorf("case %v: %v: error: %v", i, c.in, err)
 			continue
 		}
 		if !reflect.DeepEqual(have, c.want) {
@@ -63,12 +64,12 @@ func TestParseToString(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		have, err := Parse(c.in)
+		have, err := parse(c.in)
 		if err != nil {
 			t.Errorf("%v: error: %v", c.in, err)
 			continue
 		}
-		if have := have.String(); have != c.want {
+		if have := String(have); have != c.want {
 			t.Errorf("%v: have %v, want %v", c.in, have, c.want)
 		}
 	}
@@ -91,12 +92,16 @@ func TestParseError(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		_, err := Parse(c)
+		e, err := parse(c)
 		if err == nil {
-			t.Errorf("%v: expected error", c)
+			t.Errorf("%v: expected error, have: %v", c, String(e))
 			continue
 		}
 	}
+}
+
+func parse(src string) (Expr, error) {
+	return Parse(strings.NewReader(src))
 }
 
 func num(v float64) Expr             { return &Num{v} }

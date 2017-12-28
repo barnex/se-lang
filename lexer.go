@@ -33,11 +33,11 @@ func (l *Lexer) Next() Token {
 	case scanner.EOF:
 		ttype = TEOF
 	case scanner.Float:
-		ttype = TFloat
+		ttype = TNum
 	case scanner.Ident:
 		ttype = TIdent
 	case scanner.Int:
-		ttype = TInt
+		ttype = TNum
 	case scanner.String:
 		ttype = TString
 	case '(':
@@ -48,6 +48,8 @@ func (l *Lexer) Next() Token {
 		ttype = TMul
 	case '+':
 		ttype = TAdd
+	case ',':
+		ttype = TComma
 	case '/':
 		ttype = TDiv
 	case '{':
@@ -93,6 +95,10 @@ func (l *Lexer) Next() Token {
 
 	// no valid symbol was accepted
 	panic(l.syntaxError("unexpected: " + scanner.TokenString(tok)))
+}
+
+func (l *Lexer) Position() Position {
+	return Position{l.s.Position}
 }
 
 // returns a syntax error for the current position

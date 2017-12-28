@@ -21,16 +21,15 @@ type TType int
 
 const (
 	tError  = iota
-	TEOF    // end-of-file
 	TAdd    // +
 	TAssign // =
+	TComma  // ,
 	TDiv    // /
+	TEOF    // end-of-file
 	TEquals // ==
-	TFloat  // float
 	TGe     // >=
 	TGt     // >
 	TIdent  // identifer
-	TInt    // integer
 	TLBrace // {
 	TLParen // (
 	TLambda // ->
@@ -38,22 +37,22 @@ const (
 	TLt     // <
 	TMinus  // -
 	TMul    // *
+	TNum    // number
 	TRBrace // }
 	TRParen // )
 	TString // string
 )
 
 var ttypeString = map[TType]string{
-	TEOF:    "EOF",
 	TAdd:    "+",
 	TAssign: "=",
+	TComma:  ",",
 	TDiv:    "/",
+	TEOF:    "EOF",
 	TEquals: "==",
-	TFloat:  "float",
 	TGe:     ">=",
 	TGt:     ">",
 	TIdent:  "identifer",
-	TInt:    "integer",
 	TLBrace: "{",
 	TLParen: "(",
 	TLambda: "->",
@@ -61,6 +60,7 @@ var ttypeString = map[TType]string{
 	TLt:     "<",
 	TMinus:  "-",
 	TMul:    "*",
+	TNum:    "number",
 	TRBrace: "}",
 	TRParen: ")",
 	TString: "string",
