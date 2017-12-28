@@ -1,4 +1,4 @@
-package main
+package e
 
 import (
 	"reflect"
@@ -7,54 +7,67 @@ import (
 )
 
 func TestLex(t *testing.T) {
-
 	cases := []struct {
-		in   string
+		src  string
 		want []Token
 	}{
-		{``, []Token{{TEOF, ""}}},
-		{`1`, []Token{{TNum, "1"}, {TEOF, ""}}},
-		{`23`, []Token{{TNum, "23"}, {TEOF, ""}}},
-		{` 45 	678 `, []Token{{TNum, "45"}, {TNum, "678"}, {TEOF, ""}}},
-		{`x foo bar2`, []Token{{TIdent, "x"}, {TIdent, "foo"}, {TIdent, "bar2"}, {TEOF, ""}}},
-		{` x foo bar0 `, []Token{{TIdent, "x"}, {TIdent, "foo"}, {TIdent, "bar0"}, {TEOF, ""}}},
-		{`2x`, []Token{{TNum, "2x"}, {TEOF, ""}}}, // let atoi catch the syntax error
-		{`((foo )`, []Token{{TLParen, "("}, {TLParen, "("}, {TIdent, "foo"}, {TRParen, ")"}, {TEOF, ""}}},
-		{` " a 1 () "`, []Token{{TString, `" a 1 () "`}, {TEOF, ""}}},
-		{`""`, []Token{{TString, `""`}, {TEOF, ""}}},
-		{`a+b*c`, []Token{{TIdent, "a"}, {TAdd, "+"}, {TIdent, "b"}, {TMul, "*"}, {TIdent, "c"}, {TEOF, ""}}},
+		{``, []Token{}},
+		{`//comment`, []Token{}},
+		{"+", []Token{{TAdd, "+"}}},
+		{"=", []Token{{TAssign, "="}}},
+		{"/", []Token{{TDiv, "/"}}},
+		{"==", []Token{{TEquals, "=="}}},
+		{"123.4", []Token{{TFloat, "123.4"}}},
+		{">=", []Token{{TGe, ">="}}},
+		{">", []Token{{TGt, ">"}}},
+		{"ident", []Token{{TIdent, "ident"}}},
+		{"1234", []Token{{TInt, "1234"}}},
+		{"{", []Token{{TLBrace, "{"}}},
+		{"(", []Token{{TLParen, "("}}},
+		{"->", []Token{{TLambda, "->"}}},
+		{"<=", []Token{{TLe, "<="}}},
+		{"<", []Token{{TLt, "<"}}},
+		{"-", []Token{{TMinus, "-"}}},
+		{"*", []Token{{TMul, "*"}}},
+		{"}", []Token{{TRBrace, "}"}}},
+		{")", []Token{{TRParen, ")"}}},
+		{`1`, []Token{{TInt, "1"}}},
+		{`23`, []Token{{TInt, "23"}}},
+		{` 45 	678 `, []Token{{TInt, "45"}, {TInt, "678"}}},
+		{`x foo bar2`, []Token{{TIdent, "x"}, {TIdent, "foo"}, {TIdent, "bar2"}}},
+		{` x foo bar0 `, []Token{{TIdent, "x"}, {TIdent, "foo"}, {TIdent, "bar0"}}},
+		{`((foo )`, []Token{{TLParen, "("}, {TLParen, "("}, {TIdent, "foo"}, {TRParen, ")"}}},
+		{` " a 1 () "`, []Token{{TString, `" a 1 () "`}}},
+		{`""`, []Token{{TString, `""`}}},
+		{`a+b*c`, []Token{{TIdent, "a"}, {TAdd, "+"}, {TIdent, "b"}, {TMul, "*"}, {TIdent, "c"}}},
+		{`a==b`, []Token{{TIdent, "a"}, {TEquals, "=="}, {TIdent, "b"}}},
 	}
 
 	for _, c := range cases {
-		have, err := lexAll(c.in)
+		have, err := lexAll(c.src)
 		if err != nil {
-			t.Errorf("%v: error: %v", c.in, err)
+			t.Errorf("%v: error: %v", c.src, err)
 			continue
 		}
-		if !reflect.DeepEqual(have, c.want) {
-			t.Errorf("%v: have %v, want %v", c.in, have, c.want)
+		want := append(c.want, Token{TEOF, ""})
+		if !reflect.DeepEqual(have, want) {
+			t.Errorf("%v: have %v, want %v", c.src, have, want)
 		}
 	}
 }
 
 func TestError(t *testing.T) {
-	cases := []struct {
-		in   string
-		want string
-	}{
-		{`$`, "illegal character"},
-		{`"`, "unterminated string"},
-		{`"""`, "unterminated string"},
+	cases := []string{
+		`$`,
+		`"`,
+		`"""`,
 	}
 
-	for _, c := range cases {
-		_, err := lexAll(c.in)
+	for _, src := range cases {
+		_, err := lexAll(src)
 		if err == nil {
-			t.Errorf("%v: expected error", c.in)
+			t.Errorf("%v: expected error", src)
 			continue
-		}
-		if !strings.Contains(err.Error(), c.want) {
-			t.Errorf("%v: have: %v, want: %v", c.in, err.Error(), c.want)
 		}
 	}
 }
@@ -68,12 +81,12 @@ func lexAll(input string) (t []Token, e error) {
 			panic(err) // resume
 		case nil:
 			// no error
-		case SyntaxError:
+		case *SyntaxError:
 			t = nil
 			e = err
 		}
 	}()
-	l := Lex(input)
+	l := NewLexer(strings.NewReader(input))
 
 	// read all tokens
 	var out []Token
