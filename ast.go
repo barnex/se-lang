@@ -38,12 +38,12 @@ type Call struct {
 }
 
 func (n *Call) PrintTo(w io.Writer) {
-	n.Func.PrintTo(w)
 	fmt.Fprint(w, "(")
-	for i, a := range n.Args {
-		if i != 0 {
-			fmt.Fprint(w, ",")
-		}
+	n.Func.PrintTo(w)
+	for _, a := range n.Args {
+		//if i != 0 {
+		fmt.Fprint(w, " ")
+		//}
 		a.PrintTo(w)
 	}
 	fmt.Fprint(w, ")")

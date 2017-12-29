@@ -11,7 +11,7 @@ type Token struct {
 }
 
 func (t Token) String() string {
-	return fmt.Sprintf("%v(%v)", t.TType, t.Value)
+	return fmt.Sprintf("%v", t.Value)
 }
 
 // TType is a token type.

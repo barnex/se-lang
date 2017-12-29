@@ -45,11 +45,13 @@ func (p *Parser) parseExpr() Expr {
 }
 
 var precedence = map[TType]int{
-	TLambda: 1,
-	TAdd:    2,
-	TMinus:  2,
-	TMul:    3,
-	TDiv:    3,
+	TAssign: 1,
+	TLambda: 2,
+	TComma:  3,
+	TAdd:    4,
+	TMinus:  4,
+	TMul:    5,
+	TDiv:    5,
 }
 
 // parse an expression, or binary expression as long as operator precedence is at least prec1.
@@ -115,6 +117,9 @@ func (p *Parser) parseArgs() []Expr {
 // parse a parenthesized expression, stripping the outermost parens.
 func (p *Parser) parseParenExpr() Expr {
 	p.Expect(TLParen)
+	if p.Accept(TRParen) {
+		return &Call{&Ident{","}, []Expr{}}
+	}
 	e := p.parseExpr()
 	p.Expect(TRParen)
 	return e

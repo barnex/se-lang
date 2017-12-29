@@ -23,8 +23,7 @@ func TestParseExpr(t *testing.T) {
 		{`f((x))`, call(ident("f"), ident("x"))},
 		{`(f)(x)`, call(ident("f"), ident("x"))},
 		{`f(x)(y)`, call(call(ident("f"), ident("x")), ident("y"))},
-		{`f(x,y)`, call(ident("f"), ident("x"), ident("y"))},
-		{`f(x,y,)`, call(ident("f"), ident("x"), ident("y"))},
+		{`f(x,y)`, call(ident("f"), call(ident(","), ident("x"), ident("y")))},
 		{`1+2+3`, call(ident("+"), call(ident("+"), num(1), num(2)), num(3))},
 	}
 
@@ -35,7 +34,7 @@ func TestParseExpr(t *testing.T) {
 			continue
 		}
 		if !reflect.DeepEqual(have, c.want) {
-			t.Errorf("%v: have %v, want %v", c.in, have, c.want)
+			t.Errorf("case %v: %v: have %v, want %v", i, c.in, String(have), String(c.want))
 		}
 	}
 }
@@ -50,17 +49,21 @@ func TestParseToString(t *testing.T) {
 		{` 1 `, `1`},
 		{` (1) `, `1`},
 		{`f`, `f`},
-		{`f()`, `f()`},
-		{`f(x)`, `f(x)`},
-		{`f((x))`, `f(x)`},
-		{`(f)(x)`, `f(x)`},
-		{`f(x)(y)`, `f(x)(y)`},
-		{`(f)(x,y,)`, `f(x,y)`},
-		{`x+y`, `+(x,y)`},
-		{`x*y`, `*(x,y)`},
-		{`a+b*c`, `+(a,*(b,c))`},
-		{`a*b+c`, `+(*(a,b),c)`},
-		{`a*(b+c)`, `*(a,+(b,c))`},
+		{`f()`, `(f)`},
+		{`f(x)`, `(f x)`},
+		{`f((x))`, `(f x)`},
+		{`(f)(x)`, `(f x)`},
+		{`f(x)(y)`, `((f x) y)`},
+		{`(f)(x,y)`, `(f (, x y))`},
+		{`x+y`, `(+ x y)`},
+		{`x*y`, `(* x y)`},
+		{`a+b*c`, `(+ a (* b c))`},
+		{`a*b+c`, `(+ (* a b) c)`},
+		{`a*(b+c)`, `(* a (+ b c))`},
+		{`x->x*x`, `(-> x (* x x))`},
+		{`sum=(x,y)->(x+y)`, `(= sum (-> (, x y) (+ x y)))`},
+		{`f=()->(3,4)`, `(= f (-> (,) (, 3 4)))`},
+		{`()`, `(,)`},
 	}
 
 	for _, c := range cases {
