@@ -109,4 +109,4 @@ func parse(src string) (Expr, error) {
 
 func num(v float64) Expr             { return &Num{v} }
 func ident(n string) Expr            { return &Ident{n} }
-func call(f Expr, args ...Expr) Expr { return &Call{f, args} }
+func call(f Expr, args ...Expr) Expr { return &Comp{f, args} }

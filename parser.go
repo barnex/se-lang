@@ -62,9 +62,9 @@ func (p *Parser) parseBinary(prec1 int) Expr {
 		for precedence[p.Peek().TType] == prec {
 			op := p.Next()
 			rhs := p.parseBinary(prec + 1)
-			lhs = &Call{
-				Func: &Ident{op.Value},
-				Args: []Expr{lhs, rhs},
+			lhs = &Comp{
+				Car: &Ident{op.Value},
+				Cdr: []Expr{lhs, rhs},
 			}
 		}
 	}
@@ -92,7 +92,7 @@ func (p *Parser) parsePrimary() Expr {
 	for p.Accept(TLParen) {
 		args := p.parseArgs()
 		p.Expect(TRParen)
-		expr = &Call{expr, args}
+		expr = &Comp{expr, args}
 	}
 
 	return expr
@@ -118,7 +118,7 @@ func (p *Parser) parseArgs() []Expr {
 func (p *Parser) parseParenExpr() Expr {
 	p.Expect(TLParen)
 	if p.Accept(TRParen) {
-		return &Call{&Ident{","}, []Expr{}}
+		return &Comp{&Ident{","}, []Expr{}}
 	}
 	e := p.parseExpr()
 	p.Expect(TRParen)

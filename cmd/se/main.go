@@ -17,11 +17,22 @@ func main() {
 		if err != nil {
 			return // EOF
 		}
-		tree, err := e.Parse(bytes.NewReader(src))
+		expr, err := e.Parse(bytes.NewReader(src))
 		if err != nil {
 			fmt.Println(err)
-		} else {
-			fmt.Println(e.ExprString(tree))
+			continue
 		}
+		fmt.Print(e.ExprString(expr), ": ")
+		eval(expr)
 	}
+}
+
+func eval(expr e.Expr) {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+
+	fmt.Println(expr.Eval())
 }
