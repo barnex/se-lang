@@ -10,7 +10,7 @@ type Expr interface {
 	PrintTo(w io.Writer)
 }
 
-func String(e Expr) string {
+func ExprString(e Expr) string {
 	var buf bytes.Buffer
 	e.PrintTo(&buf)
 	return buf.String()

@@ -34,7 +34,7 @@ func TestParseExpr(t *testing.T) {
 			continue
 		}
 		if !reflect.DeepEqual(have, c.want) {
-			t.Errorf("case %v: %v: have %v, want %v", i, c.in, String(have), String(c.want))
+			t.Errorf("case %v: %v: have %v, want %v", i, c.in, ExprString(have), ExprString(c.want))
 		}
 	}
 }
@@ -72,7 +72,7 @@ func TestParseToString(t *testing.T) {
 			t.Errorf("%v: error: %v", c.in, err)
 			continue
 		}
-		if have := String(have); have != c.want {
+		if have := ExprString(have); have != c.want {
 			t.Errorf("%v: have %v, want %v", c.in, have, c.want)
 		}
 	}
@@ -97,7 +97,7 @@ func TestParseError(t *testing.T) {
 	for _, c := range cases {
 		e, err := parse(c)
 		if err == nil {
-			t.Errorf("%v: expected error, have: %v", c, String(e))
+			t.Errorf("%v: expected error, have: %v", c, ExprString(e))
 			continue
 		}
 	}

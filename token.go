@@ -11,6 +11,12 @@ type Token struct {
 }
 
 func (t Token) String() string {
+	switch t.TType {
+	default:
+		return t.Value
+	case TEOF:
+		return t.TType.String()
+	}
 	return fmt.Sprintf("%v", t.Value)
 }
 
