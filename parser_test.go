@@ -9,23 +9,64 @@ import (
 // Parse expressions and compare to the expected AST.
 func TestParseExpr(t *testing.T) {
 
+	var (
+		add    = ident("+")
+		f      = ident("f")
+		lambda = ident("->")
+		mul    = ident("*")
+		neg    = ident("neg")
+		one    = num(1)
+		x      = ident("x")
+		y      = ident("y")
+		z      = ident("z")
+	)
+
 	cases := []struct {
 		in   string
 		want Expr
 	}{
-		{`1`, num(1)},
-		{` 1 `, num(1)},
+		// operand
+		//  | - operand
+		{`--1`, call(neg, call(neg, one))},
+		{`-1`, call(neg, one)},
+		{`-f`, call(neg, f)},
+		{`-(f)`, call(neg, f)},
+		//  | num
+		{`1`, one},
+		//  | ident
+		{`f`, f},
+		//  | ( expr )
+		{`(-1)`, call(neg, num(1))},
 		{`(1)`, num(1)},
-		{` ( 1 ) `, num(1)},
-		{`f`, ident("f")},
-		{`f()`, call(ident("f"))},
-		{`f(x)`, call(ident("f"), ident("x"))},
-		{`f((x))`, call(ident("f"), ident("x"))},
-		{`(f)(x)`, call(ident("f"), ident("x"))},
-		{`f(x)(y)`, call(call(ident("f"), ident("x")), ident("y"))},
-		//{`f(x,y)`, call(ident("f"), call(ident(","), ident("x"), ident("y")))},
-		{`1+2+3`, call(ident("+"), call(ident("+"), num(1), num(2)), num(3))},
-		{`(x,y)`, list(ident("x"), ident("y"))},
+		{`(f)`, f},
+		{`((f))`, f},
+		//  | operand *(list)
+		{`f()`, call(f)},
+		{`f(x)`, call(f, x)},
+		{`f(x,y,z)`, call(f, x, y, z)},
+		{`(f)(x,y,z)()`, call(call(f, x, y, z))},
+
+		// expr
+		{`1, x`, list(num(1), x)},
+		{`(1, x)`, list(num(1), x)},
+		{`()`, list()},
+
+		// random
+		{`(f)(x)`, call(f, x)},
+		{`f(x)(y)`, call(call(f, x), y)},
+		{`1+2+3`, call(add, call(add, num(1), num(2)), num(3))},
+		{`1+2*3`, call(add, num(1), call(mul, num(2), num(3)))},
+		{`1*2+3`, call(add, call(mul, num(1), num(2)), num(3))},
+		{`(x,y)`, list(x, y)},
+
+		// lambda
+		{`x->y`, call(lambda, x, y)},
+		{`x->-y`, call(lambda, x, call(neg, y))},
+		{`x,y->y,x`, list(x, call(lambda, y, y), x)},
+		{`(x,y)->(y,x)`, call(lambda, list(x, y), list(y, x))},
+		{`(x,y)->f(y,x)`, call(lambda, list(x, y), call(f, y, x))},
+		{`(x,y)->f(y,x)()`, call(lambda, list(x, y), call(call(f, y, x)))},
+		{`((x,y)->y+x)()`, call(call(lambda, list(x, y), call(add, y, x)))},
 	}
 
 	for i, c := range cases {
@@ -47,24 +88,24 @@ func TestParseToString(t *testing.T) {
 		in   string
 		want string
 	}{
-		{` 1 `, `1`},
-		{` (1) `, `1`},
-		{`f`, `f`},
-		{`f()`, `(f)`},
-		{`f(x)`, `(f x)`},
-		{`f((x))`, `(f x)`},
-		{`(f)(x)`, `(f x)`},
-		{`f(x)(y)`, `((f x) y)`},
-		//{`(f)(x,y)`, `(f (, x y))`},
-		{`x+y`, `(+ x y)`},
-		{`x*y`, `(* x y)`},
-		{`a+b*c`, `(+ a (* b c))`},
-		{`a*b+c`, `(+ (* a b) c)`},
-		{`a*(b+c)`, `(* a (+ b c))`},
-		//{`x->x*x`, `(-> x (* x x))`},
-		//{`sum=(x,y)->(x+y)`, `(= sum (-> (, x y) (+ x y)))`},
-		//{`f=()->(3,4)`, `(= f (-> (,) (, 3 4)))`},
-		{`()`, `(list)`},
+	//{` 1 `, `1`},
+	//{` (1) `, `1`},
+	//{`f`, `f`},
+	//{`f()`, `(f)`},
+	//{`f(x)`, `(f x)`},
+	//{`f((x))`, `(f x)`},
+	//{`(f)(x)`, `(f x)`},
+	//{`f(x)(y)`, `((f x) y)`},
+	////{`(f)(x,y)`, `(f (, x y))`},
+	//{`x+y`, `(+ x y)`},
+	//{`x*y`, `(* x y)`},
+	//{`a+b*c`, `(+ a (* b c))`},
+	//{`a*b+c`, `(+ (* a b) c)`},
+	//{`a*(b+c)`, `(* a (+ b c))`},
+	////{`x->x*x`, `(-> x (* x x))`},
+	////{`sum=(x,y)->(x+y)`, `(= sum (-> (, x y) (+ x y)))`},
+	////{`f=()->(3,4)`, `(= f (-> (,) (, 3 4)))`},
+	//{`()`, `(list)`},
 	}
 
 	for _, c := range cases {
@@ -108,7 +149,15 @@ func parse(src string) (Expr, error) {
 	return Parse(strings.NewReader(src))
 }
 
-func list(x ...Expr) Expr            { return &List{x} }
 func num(v float64) Expr             { return &Num{v} }
 func ident(n string) Expr            { return &Ident{n} }
-func call(f Expr, args ...Expr) Expr { return &Comp{f, args} }
+func call(f Expr, args ...Expr) Expr { return &Call{f, normalize(args)} }
+func list(x ...Expr) Expr            { return &List{normalize(x)} }
+
+func normalize(x []Expr) []Expr {
+	if x == nil {
+		return []Expr{}
+		// reflect.DeepEqual considers nil different from empty list
+	}
+	return x
+}

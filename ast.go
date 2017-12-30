@@ -87,14 +87,14 @@ func (n *List) Eval() Value {
 	panic("TODO")
 }
 
-// ---- Comp
+// ---- Call
 
-type Comp struct {
+type Call struct {
 	Car Expr
 	Cdr []Expr
 }
 
-func (n *Comp) Eval() Value {
+func (n *Call) Eval() Value {
 	f := n.Car.Eval()
 	args := make([]Value, len(n.Cdr))
 	for i, a := range n.Cdr {
@@ -107,7 +107,7 @@ func (n *Comp) Eval() Value {
 	return ret[0]
 }
 
-func (n *Comp) PrintTo(w io.Writer) {
+func (n *Call) PrintTo(w io.Writer) {
 	fmt.Fprint(w, "(")
 	n.Car.PrintTo(w)
 	for _, a := range n.Cdr {

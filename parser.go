@@ -20,64 +20,65 @@ func NewParser(src io.Reader) *Parser {
 	return &Parser{lex: *NewLexer(src)}
 }
 
+// debug: panic on parse error
+const panicOnErr = false
+
 func (p *Parser) Parse() (_ Expr, e error) {
 	// catch syntax errors
-	defer func() {
-		switch err := recover().(type) {
-		default:
-			panic(err) // resume
-		case nil:
-			// no error
-		case *SyntaxError:
-			e = err
-		}
-	}()
+	if !panicOnErr {
+		defer func() {
+			switch err := recover().(type) {
+			default:
+				panic(err) // resume
+			case nil:
+				// no error
+			case *SyntaxError:
+				e = err
+			}
+		}()
+	}
 
 	p.init()
-	program := p.parseExpr()
+	program := p.PExpr()
 	p.Expect(TEOF)
 	return program, nil
 }
 
 // --------
 
-// parse an expression
-func (p *Parser) parseExpr() Expr {
+// expr:
+// 	| expr1, expr1,...
+func (p *Parser) PExpr() Expr {
+	first := p.PExpr1()
 
-	car := p.parseMaybeBinary(1)
-
-	// no comma: just return
-	if p.Peek().TType != TComma {
-		return car
+	if p.PeekTT() != TComma {
+		return first
 	}
 
-	// comma: make a list
-	list := &List{[]Expr{car}}
+	expr := &List{[]Expr{first}}
 	for p.Accept(TComma) {
-		list.List = append(list.List, p.parseMaybeBinary(1))
+		expr.List = append(expr.List, p.PExpr1())
 	}
-	return list
+	return expr
 }
 
-var precedence = map[TType]int{
-	//TAssign: 1,
-	//TComma:  2,
-	//TLambda: 1,
-	TAdd:   2,
-	TMinus: 2,
-	TMul:   3,
-	TDiv:   3,
+// PExpr parses a single expression: not containing comma's
+//  expr:
+//   | operand                      // expression without infix operators
+//   | operand operator expr1       // binary operator
+func (p *Parser) PExpr1() Expr {
+	return p.PBinary(1)
 }
 
 // parse an expression, or binary expression as long as operator precedence is at least prec1.
 // inspired by https://github.com/adonovan/gopl.io/blob/master/ch7/eval/parse.go
-func (p *Parser) parseMaybeBinary(prec1 int) Expr {
-	lhs := p.parsePrimary()
+func (p *Parser) PBinary(prec1 int) Expr {
+	lhs := p.POperand()
 	for prec := precedence[p.Peek().TType]; prec >= prec1; prec-- {
 		for precedence[p.Peek().TType] == prec {
 			op := p.Next()
-			rhs := p.parseMaybeBinary(prec + 1)
-			lhs = &Comp{
+			rhs := p.PBinary(prec + 1)
+			lhs = &Call{
 				Car: &Ident{op.Value},
 				Cdr: []Expr{lhs, rhs},
 			}
@@ -86,65 +87,49 @@ func (p *Parser) parseMaybeBinary(prec1 int) Expr {
 	return lhs
 }
 
-// parse an expression that does not contain binary operators.
-func (p *Parser) parsePrimary() Expr {
-	var expr Expr
+var isUnary = map[TType]bool{
+	TAdd:   true,
+	TMinus: true,
+}
 
-	// non-call expression
-	t := p.Peek()
-	switch t.TType {
-	default:
-		panic(p.Unexpected(p.Next()))
-	case TNum:
-		expr = p.parseNum()
-	case TLParen:
-		expr = p.parseParenExpr()
-	case TIdent:
-		expr = p.parseIdent()
+// parse an operand:
+// operand:
+//  | - operand
+//  | num
+//  | ident
+//  | parenexpr
+//  | operand *(list)
+func (p *Parser) POperand() Expr {
+
+	// - operand
+	if p.Accept(TMinus) {
+		return &Call{&Ident{"neg"}, []Expr{p.POperand()}}
 	}
 
-	// call expression
-	for p.Accept(TLParen) {
-		args := p.parseArgs()
-		p.Expect(TRParen)
-		expr = &Comp{expr, args}
+	// num, ident, parenexpr
+	var expr Expr
+	switch p.PeekTT() {
+	case TNum:
+		expr = p.PNum()
+	case TIdent:
+		expr = p.PIdent()
+	case TLParen:
+		expr = p.PParenExpr()
+	default:
+		panic(p.Unexpected(p.Next()))
+	}
+
+	// operand *(list)
+	for p.PeekTT() == TLParen {
+		args := p.PArgList()
+		expr = &Call{expr, args}
 	}
 
 	return expr
 }
 
-// parse a function argument list
-func (p *Parser) parseArgs() []Expr {
-	var args []Expr
-
-	for {
-		if p.Peek().TType == TRParen {
-			return args
-		}
-		args = append(args, p.parseExpr())
-		if p.Peek().TType != TRParen {
-			p.Expect(TComma)
-		}
-	}
-	panic("unreachable")
-}
-
-// parse a parenthesized expression, stripping the outermost parens.
-func (p *Parser) parseParenExpr() Expr {
-	p.Expect(TLParen)
-
-	// ()
-	if p.Accept(TRParen) {
-		return &List{[]Expr{}}
-	}
-
-	e := p.parseExpr()
-	p.Expect(TRParen)
-	return e
-}
-
-// parse a number
-func (p *Parser) parseNum() Expr {
+// parse a number.
+func (p *Parser) PNum() Expr {
 	tok := p.Expect(TNum)
 	v, err := strconv.ParseFloat(tok.Value, 64)
 	if err != nil {
@@ -154,16 +139,59 @@ func (p *Parser) parseNum() Expr {
 }
 
 // parse an identifier
-func (p *Parser) parseIdent() Expr {
+func (p *Parser) PIdent() Expr {
 	tok := p.Expect(TIdent)
 	return &Ident{tok.Value}
 }
 
-// --------
+// parse a parenthesized argument list:
+//  arglist:
+//   | ()
+//   | ( expr1, expr1, ... )
+func (p *Parser) PArgList() []Expr {
+	p.Expect(TLParen)
+
+	// ()
+	if p.Accept(TRParen) {
+		return []Expr{}
+	}
+
+	// ( expr1, expr1, ... )
+	list := []Expr{p.PExpr1()}
+	for p.Accept(TComma) {
+		list = append(list, p.PExpr1())
+	}
+	p.Expect(TRParen)
+	return list
+}
+
+func (p *Parser) PParenExpr() Expr {
+	p.Expect(TLParen)
+	if p.Accept(TRParen) {
+		return &List{[]Expr{}}
+	}
+	expr := p.PExpr()
+	p.Expect(TRParen)
+	return expr
+}
+
+// ------------------------------------------
+
+var precedence = map[TType]int{
+	TLambda: 1,
+	TAdd:    2,
+	TMinus:  2,
+	TMul:    3,
+	TDiv:    3,
+}
 
 // Peek returns the next token in the stream without advancing
 func (p *Parser) Peek() Token {
 	return p.next
+}
+
+func (p *Parser) PeekTT() TType {
+	return p.next.TType
 }
 
 // Next returns the next token in the stream and advances
