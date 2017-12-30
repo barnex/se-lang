@@ -39,29 +39,44 @@ func (p *Parser) Parse() (_ Expr, e error) {
 	return program, nil
 }
 
+// --------
+
 // parse an expression
 func (p *Parser) parseExpr() Expr {
-	return p.parseBinary(1)
+
+	car := p.parseMaybeBinary(1)
+
+	// no comma: just return
+	if p.Peek().TType != TComma {
+		return car
+	}
+
+	// comma: make a list
+	list := &List{[]Expr{car}}
+	for p.Accept(TComma) {
+		list.List = append(list.List, p.parseMaybeBinary(1))
+	}
+	return list
 }
 
 var precedence = map[TType]int{
-	TAssign: 1,
-	TLambda: 2,
-	TComma:  3,
-	TAdd:    4,
-	TMinus:  4,
-	TMul:    5,
-	TDiv:    5,
+	//TAssign: 1,
+	//TComma:  2,
+	//TLambda: 1,
+	TAdd:   2,
+	TMinus: 2,
+	TMul:   3,
+	TDiv:   3,
 }
 
 // parse an expression, or binary expression as long as operator precedence is at least prec1.
 // inspired by https://github.com/adonovan/gopl.io/blob/master/ch7/eval/parse.go
-func (p *Parser) parseBinary(prec1 int) Expr {
+func (p *Parser) parseMaybeBinary(prec1 int) Expr {
 	lhs := p.parsePrimary()
 	for prec := precedence[p.Peek().TType]; prec >= prec1; prec-- {
 		for precedence[p.Peek().TType] == prec {
 			op := p.Next()
-			rhs := p.parseBinary(prec + 1)
+			rhs := p.parseMaybeBinary(prec + 1)
 			lhs = &Comp{
 				Car: &Ident{op.Value},
 				Cdr: []Expr{lhs, rhs},
@@ -117,9 +132,12 @@ func (p *Parser) parseArgs() []Expr {
 // parse a parenthesized expression, stripping the outermost parens.
 func (p *Parser) parseParenExpr() Expr {
 	p.Expect(TLParen)
+
+	// ()
 	if p.Accept(TRParen) {
-		return &Comp{&Ident{","}, []Expr{}}
+		return &List{[]Expr{}}
 	}
+
 	e := p.parseExpr()
 	p.Expect(TRParen)
 	return e
@@ -140,6 +158,8 @@ func (p *Parser) parseIdent() Expr {
 	tok := p.Expect(TIdent)
 	return &Ident{tok.Value}
 }
+
+// --------
 
 // Peek returns the next token in the stream without advancing
 func (p *Parser) Peek() Token {
@@ -166,7 +186,7 @@ func (p *Parser) Accept(t TType) bool {
 // consume the next token and throw an error if it is not of the expected type.
 func (p *Parser) Expect(t TType) Token {
 	if n := p.Next(); n.TType != t {
-		panic(p.SyntaxError(fmt.Sprintf("unexpected %v, expected %v", n, t)))
+		panic(p.SyntaxError(fmt.Sprintf("unexpected '%v', expected '%v'", n, t)))
 	} else {
 		return n
 	}
@@ -174,7 +194,7 @@ func (p *Parser) Expect(t TType) Token {
 
 // construct a syntax error for unexpected token at current position.
 func (p *Parser) Unexpected(t Token) *SyntaxError {
-	return p.SyntaxError(fmt.Sprintf("unexpected %v", t))
+	return p.SyntaxError(fmt.Sprintf("unexpected '%v'", t))
 }
 
 // construct a syntax error at current position.

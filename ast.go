@@ -68,6 +68,27 @@ func (n *Ident) PrintTo(w io.Writer) {
 
 // -------- Composite
 
+// ---- List
+
+type List struct {
+	List []Expr
+}
+
+func (n *List) PrintTo(w io.Writer) {
+	fmt.Fprint(w, "(list")
+	for _, a := range n.List {
+		fmt.Fprint(w, " ")
+		a.PrintTo(w)
+	}
+	fmt.Fprint(w, ")")
+}
+
+func (n *List) Eval() Value {
+	panic("TODO")
+}
+
+// ---- Comp
+
 type Comp struct {
 	Car Expr
 	Cdr []Expr
