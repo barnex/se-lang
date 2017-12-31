@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-func Parse(src io.Reader) (Expr, error) {
+func Parse(src io.Reader) (Node, error) {
 	return NewParser(src).Parse()
 }
 
@@ -23,7 +23,7 @@ func NewParser(src io.Reader) *Parser {
 // debug: panic on parse error
 const panicOnErr = false
 
-func (p *Parser) Parse() (_ Expr, e error) {
+func (p *Parser) Parse() (_ Node, e error) {
 	// catch syntax errors
 	if !panicOnErr {
 		defer func() {
@@ -48,16 +48,16 @@ func (p *Parser) Parse() (_ Expr, e error) {
 
 // expr:
 // 	| expr1, expr1,...
-func (p *Parser) PExpr() Expr {
+func (p *Parser) PExpr() Node {
 	first := p.PExpr1()
 
 	if p.PeekTT() != TComma {
 		return first
 	}
 
-	expr := &List{[]Expr{first}}
+	expr := List{first}
 	for p.Accept(TComma) {
-		expr.List = append(expr.List, p.PExpr1())
+		expr = append(expr, p.PExpr1())
 	}
 	return expr
 }
@@ -66,14 +66,14 @@ func (p *Parser) PExpr() Expr {
 //  expr:
 //   | operand                      // expression without infix operators
 //   | operand operator expr1       // binary operator
-func (p *Parser) PExpr1() Expr {
+func (p *Parser) PExpr1() Node {
 	expr := p.PBinary(1)
 
 	// lambda: assure argument list are identifiers
-	if call, ok := expr.(*Call); ok {
-		if id, ok := call.Car.(*Ident); ok {
+	if call, ok := expr.(List); ok {
+		if id, ok := call.Car().(*Ident); ok {
 			if id.Name == "lambda" {
-				call.Cdr[0] = p.toIdentList(call.Cdr[0])
+				call[1] = p.toIdentList(call[1])
 			}
 		}
 	}
@@ -81,33 +81,30 @@ func (p *Parser) PExpr1() Expr {
 	return expr
 }
 
-func (p *Parser) toIdentList(args Expr) Expr {
-	var list []Expr
-	if l, ok := args.(*List); ok {
-		list = l.List
+func (p *Parser) toIdentList(args Node) Node {
+	var list List
+	if l, ok := args.(List); ok {
+		list = l
 	} else {
-		list = []Expr{args}
+		list = List{args}
 	}
 	for _, a := range list {
 		if _, ok := a.(*Ident); !ok {
-			panic(SyntaxErrorf("lambda: arguments must be identifiers, have %v", ExprString(a)))
+			panic(SyntaxErrorf("lambda: arguments must be identifiers, have %v", ToString(a)))
 		}
 	}
-	return &List{list}
+	return list
 }
 
 // parse an expression, or binary expression as long as operator precedence is at least prec1.
 // inspired by https://github.com/adonovan/gopl.io/blob/master/ch7/eval/parse.go
-func (p *Parser) PBinary(prec1 int) Expr {
+func (p *Parser) PBinary(prec1 int) Node {
 	lhs := p.POperand()
 	for prec := precedence[p.Peek().TType]; prec >= prec1; prec-- {
 		for precedence[p.Peek().TType] == prec {
 			op := p.Next()
 			rhs := p.PBinary(prec + 1)
-			lhs = &Call{
-				Car: &Ident{opFunc(op.TType)},
-				Cdr: []Expr{lhs, rhs},
-			}
+			lhs = MakeList(&Ident{opFunc(op.TType)}, lhs, rhs)
 		}
 	}
 	return lhs
@@ -138,15 +135,15 @@ var isUnary = map[TType]bool{
 //  | ident
 //  | parenexpr
 //  | operand *(list)
-func (p *Parser) POperand() Expr {
+func (p *Parser) POperand() Node {
 
 	// - operand
 	if p.Accept(TMinus) {
-		return &Call{&Ident{"neg"}, []Expr{p.POperand()}}
+		return List{&Ident{"neg"}, p.POperand()}
 	}
 
 	// num, ident, parenexpr
-	var expr Expr
+	var expr Node
 	switch p.PeekTT() {
 	case TNum:
 		expr = p.PNum()
@@ -161,14 +158,14 @@ func (p *Parser) POperand() Expr {
 	// operand *(list)
 	for p.PeekTT() == TLParen {
 		args := p.PArgList()
-		expr = &Call{expr, args}
+		expr = MakeList(expr, args...)
 	}
 
 	return expr
 }
 
 // parse a number.
-func (p *Parser) PNum() Expr {
+func (p *Parser) PNum() Node {
 	tok := p.Expect(TNum)
 	v, err := strconv.ParseFloat(tok.Value, 64)
 	if err != nil {
@@ -178,7 +175,7 @@ func (p *Parser) PNum() Expr {
 }
 
 // parse an identifier
-func (p *Parser) PIdent() Expr {
+func (p *Parser) PIdent() Node {
 	tok := p.Expect(TIdent)
 	return &Ident{tok.Value}
 }
@@ -187,16 +184,16 @@ func (p *Parser) PIdent() Expr {
 //  arglist:
 //   | ()
 //   | ( expr1, expr1, ... )
-func (p *Parser) PArgList() []Expr {
+func (p *Parser) PArgList() []Node {
 	p.Expect(TLParen)
 
 	// ()
 	if p.Accept(TRParen) {
-		return []Expr{}
+		return []Node{}
 	}
 
 	// ( expr1, expr1, ... )
-	list := []Expr{p.PExpr1()}
+	list := []Node{p.PExpr1()}
 	for p.Accept(TComma) {
 		list = append(list, p.PExpr1())
 	}
@@ -204,10 +201,10 @@ func (p *Parser) PArgList() []Expr {
 	return list
 }
 
-func (p *Parser) PParenExpr() Expr {
+func (p *Parser) PParenExpr() Node {
 	p.Expect(TLParen)
 	if p.Accept(TRParen) {
-		return &List{[]Expr{}}
+		return List{}
 	}
 	expr := p.PExpr()
 	p.Expect(TRParen)

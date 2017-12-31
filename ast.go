@@ -4,120 +4,108 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"math"
-	"reflect"
 )
 
-// ---- Expr
-
-type Expr interface {
-	Eval() Value
+type Node interface {
 	PrintTo(w io.Writer)
 }
 
-func ExprString(e Expr) string {
-	var buf bytes.Buffer
-	e.PrintTo(&buf)
-	return buf.String()
-}
-
-// -------- Atomic
-// ---- Num
+var (
+	_ Node = (*Num)(nil)
+	_ Node = (*Ident)(nil)
+	_ Node = (*List)(nil)
+)
 
 type Num struct {
 	Value float64
-}
-
-func (n *Num) Eval() Value {
-	return reflect.ValueOf(n.Value)
 }
 
 func (n *Num) PrintTo(w io.Writer) {
 	fmt.Fprint(w, n.Value)
 }
 
-// ---- Ident
-
 type Ident struct {
 	Name string
-}
-
-var scope = map[string]reflect.Value{
-	"sqrt": reflect.ValueOf(math.Sqrt),
-	"+":    reflect.ValueOf(add),
-	"-":    reflect.ValueOf(sub),
-	"*":    reflect.ValueOf(mul),
-	"/":    reflect.ValueOf(div),
-}
-
-func add(x, y float64) float64 { return x + y }
-func sub(x, y float64) float64 { return x - y }
-func mul(x, y float64) float64 { return x * y }
-func div(x, y float64) float64 { return x / y }
-
-func (n *Ident) Eval() Value {
-	if v, ok := scope[n.Name]; ok {
-		return v
-	}
-	panic("undefined: " + n.Name)
 }
 
 func (n *Ident) PrintTo(w io.Writer) {
 	fmt.Fprint(w, n.Name)
 }
 
-// -------- Composite
+type List []Node
 
-// ---- List
-
-type List struct {
-	List []Expr
-}
-
-func (n *List) PrintTo(w io.Writer) {
-	fmt.Fprint(w, "(list")
-	for _, a := range n.List {
-		fmt.Fprint(w, " ")
-		a.PrintTo(w)
+func (l List) Car() Node {
+	if len(l) == 0 {
+		return nil
 	}
-	fmt.Fprint(w, ")")
+	return l[0]
 }
 
-func (n *List) Eval() Value {
-	panic("TODO")
+func (l List) Cdr() List {
+	return l[1:]
 }
 
-// ---- Call
-
-type Call struct {
-	Car Expr
-	Cdr []Expr
+func MakeList(car Node, cdr ...Node) List {
+	a := make(List, 1+len(cdr))
+	a[0] = car
+	copy(a[1:], cdr)
+	return a
 }
 
-func (n *Call) Eval() Value {
-	f := n.Car.Eval()
-	args := make([]Value, len(n.Cdr))
-	for i, a := range n.Cdr {
-		args[i] = a.Eval()
-	}
-	ret := f.Call(args)
-	if n := len(ret); n != 1 {
-		panic(fmt.Sprint(n, "return values"))
-	}
-	return ret[0]
-}
-
-func (n *Call) PrintTo(w io.Writer) {
+func (n List) PrintTo(w io.Writer) {
 	fmt.Fprint(w, "(")
-	n.Car.PrintTo(w)
-	for _, a := range n.Cdr {
-		//if i != 0 {
-		fmt.Fprint(w, " ")
-		//}
+	for i, a := range n {
+		if i != 0 {
+			fmt.Fprint(w, " ")
+		}
 		a.PrintTo(w)
 	}
 	fmt.Fprint(w, ")")
+}
+
+func ToString(e Node) string {
+	var buf bytes.Buffer
+	e.PrintTo(&buf)
+	return buf.String()
 }
 
 // -------- Value
-type Value = reflect.Value
+//type Value = reflect.Value
+//
+//
+//var scope = map[string]reflect.Value{
+//	"sqrt": reflect.ValueOf(math.Sqrt),
+//	"+":    reflect.ValueOf(add),
+//	"-":    reflect.ValueOf(sub),
+//	"*":    reflect.ValueOf(mul),
+//	"/":    reflect.ValueOf(div),
+//}
+//
+//func add(x, y float64) float64 { return x + y }
+//func sub(x, y float64) float64 { return x - y }
+//func mul(x, y float64) float64 { return x * y }
+//func div(x, y float64) float64 { return x / y }
+//
+//func (n *Ident) Eval() Value {
+//	if v, ok := scope[n.Name]; ok {
+//		return v
+//	}
+//	panic("undefined: " + n.Name)
+//}
+//
+////func (n *Call) Eval() Value {
+////	f := n.Car.Eval()
+////	args := make([]Value, len(n.Cdr))
+////	for i, a := range n.Cdr {
+////		args[i] = a.Eval()
+////	}
+////	ret := f.Call(args)
+////	if n := len(ret); n != 1 {
+////		panic(fmt.Sprint(n, "return values"))
+////	}
+////	return ret[0]
+////}
+//
+//func (n *List) Eval() Value {
+//	panic("TODO")
+//}

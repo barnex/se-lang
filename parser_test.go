@@ -23,7 +23,7 @@ func TestParseExpr(t *testing.T) {
 
 	cases := []struct {
 		in   string
-		want Expr
+		want Node
 	}{
 		// operand
 		//  | - operand
@@ -76,7 +76,7 @@ func TestParseExpr(t *testing.T) {
 			continue
 		}
 		if !reflect.DeepEqual(have, c.want) {
-			t.Errorf("case %v: %v: have %v, want %v", i, c.in, ExprString(have), ExprString(c.want))
+			t.Errorf("case %v: %v: have %v, want %v", i, c.in, ToString(have), ToString(c.want))
 		}
 	}
 }
@@ -108,7 +108,7 @@ func TestParseError(t *testing.T) {
 	for _, c := range cases {
 		e, err := parse(c)
 		if err == nil {
-			t.Errorf("%v: expected error, have: %v", c, ExprString(e))
+			t.Errorf("%v: expected error, have: %v", c, ToString(e))
 			continue
 		}
 	}
@@ -147,24 +147,24 @@ func TestParseToString(t *testing.T) {
 			t.Errorf("%v: error: %v", c.in, err)
 			continue
 		}
-		if have := ExprString(have); have != c.want {
+		if have := ToString(have); have != c.want {
 			t.Errorf("%v: have %v, want %v", c.in, have, c.want)
 		}
 	}
 }
 
-func parse(src string) (Expr, error) {
+func parse(src string) (Node, error) {
 	return Parse(strings.NewReader(src))
 }
 
-func num(v float64) Expr             { return &Num{v} }
-func ident(n string) Expr            { return &Ident{n} }
-func call(f Expr, args ...Expr) Expr { return &Call{f, normalize(args)} }
-func list(x ...Expr) Expr            { return &List{normalize(x)} }
+func num(v float64) Node             { return &Num{v} }
+func ident(n string) Node            { return &Ident{n} }
+func call(f Node, args ...Node) Node { return MakeList(f, normalize(args)...) }
+func list(x ...Node) Node            { return List(normalize(x)) }
 
-func normalize(x []Expr) []Expr {
+func normalize(x []Node) []Node {
 	if x == nil {
-		return []Expr{}
+		return []Node{}
 		// reflect.DeepEqual considers nil different from empty list
 	}
 	return x
