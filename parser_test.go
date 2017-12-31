@@ -10,10 +10,10 @@ import (
 func TestParseExpr(t *testing.T) {
 
 	var (
-		add    = ident("+")
+		add    = ident("add")
 		f      = ident("f")
-		lambda = ident("->")
-		mul    = ident("*")
+		lambda = ident("lambda")
+		mul    = ident("mul")
 		neg    = ident("neg")
 		one    = num(1)
 		x      = ident("x")
@@ -60,9 +60,9 @@ func TestParseExpr(t *testing.T) {
 		{`(x,y)`, list(x, y)},
 
 		// lambda
-		{`x->y`, call(lambda, x, y)},
-		{`x->-y`, call(lambda, x, call(neg, y))},
-		{`x,y->y,x`, list(x, call(lambda, y, y), x)},
+		{`x->y`, call(lambda, list(x), y)},
+		{`x->-y`, call(lambda, list(x), call(neg, y))},
+		{`x,y->y,x`, list(x, call(lambda, list(y), y), x)},
 		{`(x,y)->(y,x)`, call(lambda, list(x, y), list(y, x))},
 		{`(x,y)->f(y,x)`, call(lambda, list(x, y), call(f, y, x))},
 		{`(x,y)->f(y,x)()`, call(lambda, list(x, y), call(call(f, y, x)))},
@@ -77,6 +77,39 @@ func TestParseExpr(t *testing.T) {
 		}
 		if !reflect.DeepEqual(have, c.want) {
 			t.Errorf("case %v: %v: have %v, want %v", i, c.in, ExprString(have), ExprString(c.want))
+		}
+	}
+}
+
+// Ensure parse errors on bad input.
+func TestParseError(t *testing.T) {
+	cases := []string{
+		`(1`,
+		`1)`,
+		` ( 1 `,
+		` 1 ) `,
+		`f(x`,
+		`f(x))`,
+		`f(x y)`,
+		`f(,)`,
+		`f g`,
+		`f(g) x`,
+		`1 2`,
+		`+`,
+		`-`,
+		`*`,
+		`,`,
+		`(,)`,
+		`1+`,
+		`a-`,
+		`(1+1)->2`,
+	}
+
+	for _, c := range cases {
+		e, err := parse(c)
+		if err == nil {
+			t.Errorf("%v: expected error, have: %v", c, ExprString(e))
+			continue
 		}
 	}
 }
@@ -116,31 +149,6 @@ func TestParseToString(t *testing.T) {
 		}
 		if have := ExprString(have); have != c.want {
 			t.Errorf("%v: have %v, want %v", c.in, have, c.want)
-		}
-	}
-}
-
-// Ensure parse errors on bad input.
-func TestParseError(t *testing.T) {
-	cases := []string{
-		`(1`,
-		`1)`,
-		` ( 1 `,
-		` 1 ) `,
-		`f(x`,
-		`f(x))`,
-		`f(x y)`,
-		`f(,)`,
-		`f g`,
-		`f(g) x`,
-		`1 2`,
-	}
-
-	for _, c := range cases {
-		e, err := parse(c)
-		if err == nil {
-			t.Errorf("%v: expected error, have: %v", c, ExprString(e))
-			continue
 		}
 	}
 }

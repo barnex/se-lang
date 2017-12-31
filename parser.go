@@ -67,7 +67,33 @@ func (p *Parser) PExpr() Expr {
 //   | operand                      // expression without infix operators
 //   | operand operator expr1       // binary operator
 func (p *Parser) PExpr1() Expr {
-	return p.PBinary(1)
+	expr := p.PBinary(1)
+
+	// lambda: assure argument list are identifiers
+	if call, ok := expr.(*Call); ok {
+		if id, ok := call.Car.(*Ident); ok {
+			if id.Name == "lambda" {
+				call.Cdr[0] = p.toIdentList(call.Cdr[0])
+			}
+		}
+	}
+
+	return expr
+}
+
+func (p *Parser) toIdentList(args Expr) Expr {
+	var list []Expr
+	if l, ok := args.(*List); ok {
+		list = l.List
+	} else {
+		list = []Expr{args}
+	}
+	for _, a := range list {
+		if _, ok := a.(*Ident); !ok {
+			panic(SyntaxErrorf("lambda: arguments must be identifiers, have %v", ExprString(a)))
+		}
+	}
+	return &List{list}
 }
 
 // parse an expression, or binary expression as long as operator precedence is at least prec1.
@@ -79,12 +105,25 @@ func (p *Parser) PBinary(prec1 int) Expr {
 			op := p.Next()
 			rhs := p.PBinary(prec + 1)
 			lhs = &Call{
-				Car: &Ident{op.Value},
+				Car: &Ident{opFunc(op.TType)},
 				Cdr: []Expr{lhs, rhs},
 			}
 		}
 	}
 	return lhs
+}
+
+func opFunc(t TType) string {
+	if f, ok := opfunc[t]; ok {
+		return f
+	}
+	panic(fmt.Sprintf("bug: bad operator: %v", t))
+}
+
+var opfunc = map[TType]string{
+	TLambda: "lambda",
+	TAdd:    "add",
+	TMul:    "mul",
 }
 
 var isUnary = map[TType]bool{

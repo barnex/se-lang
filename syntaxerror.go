@@ -7,6 +7,10 @@ type SyntaxError struct {
 	Position
 }
 
+func SyntaxErrorf(format string, x ...interface{}) *SyntaxError {
+	return &SyntaxError{Msg: fmt.Sprintf(format, x...)}
+}
+
 func (e *SyntaxError) Error() string {
 	return fmt.Sprintf("line %v:%v: %v", e.Line, e.Column, e.Msg)
 }
