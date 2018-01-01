@@ -13,7 +13,7 @@ type Node interface {
 var (
 	_ Node = (*Num)(nil)
 	_ Node = (*Ident)(nil)
-	_ Node = (*List)(nil)
+	_ Node = (List)(nil)
 )
 
 type Num struct {

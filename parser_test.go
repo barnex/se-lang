@@ -27,46 +27,38 @@ func TestParseExpr(t *testing.T) {
 	}{
 		// operand
 		//  | - operand
-		{`--1`, call(neg, call(neg, one))},
-		{`-1`, call(neg, one)},
-		{`-f`, call(neg, f)},
-		{`-(f)`, call(neg, f)},
+		{`--1`, list(neg, list(neg, one))},
+		{`-1`, list(neg, one)},
+		{`-f`, list(neg, f)},
+		{`-(f)`, list(neg, f)},
 		//  | num
 		{`1`, one},
 		//  | ident
 		{`f`, f},
 		//  | ( expr )
-		{`(-1)`, call(neg, num(1))},
+		{`(-1)`, list(neg, num(1))},
 		{`(1)`, num(1)},
 		{`(f)`, f},
 		{`((f))`, f},
 		//  | operand *(list)
-		{`f()`, call(f)},
-		{`f(x)`, call(f, x)},
-		{`f(x,y,z)`, call(f, x, y, z)},
-		{`(f)(x,y,z)()`, call(call(f, x, y, z))},
-
-		// expr
-		{`1, x`, list(num(1), x)},
-		{`(1, x)`, list(num(1), x)},
-		{`()`, list()},
+		{`f()`, list(f)},
+		{`f(x)`, list(f, x)},
+		{`f(x,y,z)`, list(f, x, y, z)},
+		{`(f)(x,y,z)()`, list(list(f, x, y, z))},
 
 		// random
-		{`(f)(x)`, call(f, x)},
-		{`f(x)(y)`, call(call(f, x), y)},
-		{`1+2+3`, call(add, call(add, num(1), num(2)), num(3))},
-		{`1+2*3`, call(add, num(1), call(mul, num(2), num(3)))},
-		{`1*2+3`, call(add, call(mul, num(1), num(2)), num(3))},
-		{`(x,y)`, list(x, y)},
+		{`(f)(x)`, list(f, x)},
+		{`f(x)(y)`, list(list(f, x), y)},
+		{`1+2+3`, list(add, list(add, num(1), num(2)), num(3))},
+		{`1+2*3`, list(add, num(1), list(mul, num(2), num(3)))},
+		{`1*2+3`, list(add, list(mul, num(1), num(2)), num(3))},
 
 		// lambda
-		{`x->y`, call(lambda, list(x), y)},
-		{`x->-y`, call(lambda, list(x), call(neg, y))},
-		{`x,y->y,x`, list(x, call(lambda, list(y), y), x)},
-		{`(x,y)->(y,x)`, call(lambda, list(x, y), list(y, x))},
-		{`(x,y)->f(y,x)`, call(lambda, list(x, y), call(f, y, x))},
-		{`(x,y)->f(y,x)()`, call(lambda, list(x, y), call(call(f, y, x)))},
-		{`((x,y)->y+x)()`, call(call(lambda, list(x, y), call(add, y, x)))},
+		{`x->y`, list(lambda, list(x), y)},
+		{`x->-y`, list(lambda, list(x), list(neg, y))},
+		{`(x,y)->f(y,x)`, list(lambda, list(x, y), list(f, y, x))},
+		{`(x,y)->f(y,x)()`, list(lambda, list(x, y), list(list(f, y, x)))},
+		{`((x,y)->y+x)()`, list(list(lambda, list(x, y), list(add, y, x)))},
 	}
 
 	for i, c := range cases {
@@ -103,6 +95,14 @@ func TestParseError(t *testing.T) {
 		`1+`,
 		`a-`,
 		`(1+1)->2`,
+		`x(y)->x+y`, // not (lambda (x y) (add x y))
+		`()()`,      // not (())
+		`()`,        // not ()
+		`(1,2)`,     // not (1 2)
+		`1,2`,       // not (1 2)
+		`1,x`,
+		`x,y->y,x`,
+		`(x,y)->(y,x)`,
 	}
 
 	for _, c := range cases {
@@ -157,10 +157,9 @@ func parse(src string) (Node, error) {
 	return Parse(strings.NewReader(src))
 }
 
-func num(v float64) Node             { return &Num{v} }
-func ident(n string) Node            { return &Ident{n} }
-func call(f Node, args ...Node) Node { return MakeList(f, normalize(args)...) }
-func list(x ...Node) Node            { return List(normalize(x)) }
+func num(v float64) Node     { return &Num{v} }
+func ident(n string) Node    { return &Ident{n} }
+func list(args ...Node) Node { return List(normalize(args)) }
 
 func normalize(x []Node) []Node {
 	if x == nil {

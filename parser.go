@@ -11,10 +11,11 @@ func Parse(src io.Reader) (Node, error) {
 }
 
 type Parser struct {
-	lex     Lexer
-	next    Token
-	nextPos Position
+	lex  Lexer
+	next [readAhead]Token
 }
+
+const readAhead = 3
 
 func NewParser(src io.Reader) *Parser {
 	return &Parser{lex: *NewLexer(src)}
@@ -47,53 +48,66 @@ func (p *Parser) Parse() (_ Node, e error) {
 // --------
 
 // expr:
-// 	| expr1, expr1,...
+// 	| expr1
+//  | lambda
 func (p *Parser) PExpr() Node {
-	first := p.PExpr1()
-
-	if p.PeekTT() != TComma {
-		return first
+	// peek for lambda: "()" or "(ident," or "ident->"
+	if p.HasPeek(TLParen, TRParen) ||
+		p.HasPeek(TLParen, TIdent, TComma) ||
+		p.HasPeek(TIdent, TLambda) {
+		return p.PLambda()
+	} else {
+		return p.PExpr1()
 	}
-
-	expr := List{first}
-	for p.Accept(TComma) {
-		expr = append(expr, p.PExpr1())
-	}
-	return expr
 }
 
-// PExpr parses a single expression: not containing comma's
+// lambda:
+//  | ident -> expr1
+//  | () -> expr1
+//  | (ident,...) -> expr1
+func (p *Parser) PLambda() Node {
+	var args List
+
+	// ident -> expr
+	if p.HasPeek(TIdent) {
+		args = List{p.PIdent()}
+	} else {
+		args = p.PIdentList()
+	}
+
+	p.Expect(TLambda)
+
+	body := p.PExpr()
+	return List{&Ident{"lambda"}, args, body}
+}
+
+// identlist:
+//  | ()
+//  | (ident,...)
+func (p *Parser) PIdentList() List {
+	p.Expect(TLParen)
+	var l List
+
+	//()
+	if p.Accept(TRParen) {
+		return l
+	}
+
+	//(ident,...)
+	l = append(l, p.PIdent())
+	for p.Accept(TComma) {
+		l = append(l, p.PIdent())
+	}
+	p.Expect(TRParen)
+	return l
+}
+
+// PExpr parses an expression not containing lambdas
 //  expr:
 //   | operand                      // expression without infix operators
 //   | operand operator expr1       // binary operator
 func (p *Parser) PExpr1() Node {
-	expr := p.PBinary(1)
-
-	// lambda: assure argument list are identifiers
-	if call, ok := expr.(List); ok {
-		if id, ok := call.Car().(*Ident); ok {
-			if id.Name == "lambda" {
-				call[1] = p.toIdentList(call[1])
-			}
-		}
-	}
-
-	return expr
-}
-
-func (p *Parser) toIdentList(args Node) Node {
-	var list List
-	if l, ok := args.(List); ok {
-		list = l
-	} else {
-		list = List{args}
-	}
-	for _, a := range list {
-		if _, ok := a.(*Ident); !ok {
-			panic(SyntaxErrorf("lambda: arguments must be identifiers, have %v", ToString(a)))
-		}
-	}
-	return list
+	return p.PBinary(1)
 }
 
 // parse an expression, or binary expression as long as operator precedence is at least prec1.
@@ -118,9 +132,8 @@ func opFunc(t TType) string {
 }
 
 var opfunc = map[TType]string{
-	TLambda: "lambda",
-	TAdd:    "add",
-	TMul:    "mul",
+	TAdd: "add",
+	TMul: "mul",
 }
 
 var isUnary = map[TType]bool{
@@ -214,27 +227,38 @@ func (p *Parser) PParenExpr() Node {
 // ------------------------------------------
 
 var precedence = map[TType]int{
-	TLambda: 1,
-	TAdd:    2,
-	TMinus:  2,
-	TMul:    3,
-	TDiv:    3,
+	TAdd:   1,
+	TMinus: 1,
+	TMul:   2,
+	TDiv:   2,
 }
 
 // Peek returns the next token in the stream without advancing
 func (p *Parser) Peek() Token {
-	return p.next
+	return p.next[0]
+}
+
+func (p *Parser) HasPeek(want ...TType) bool {
+	for i, w := range want {
+		if p.next[i].TType != w {
+			return false
+		}
+	}
+	return true
 }
 
 func (p *Parser) PeekTT() TType {
-	return p.next.TType
+	return p.Peek().TType
 }
 
 // Next returns the next token in the stream and advances
 func (p *Parser) Next() Token {
-	curr := p.next
-	p.nextPos = p.lex.Position()
-	p.next = p.lex.Next()
+	curr := p.next[0]
+
+	for i := 0; i < readAhead-1; i++ {
+		p.next[i] = p.next[i+1]
+	}
+	p.next[readAhead-1] = p.lex.Next()
 	return curr
 }
 
@@ -263,12 +287,19 @@ func (p *Parser) Unexpected(t Token) *SyntaxError {
 
 // construct a syntax error at current position.
 func (p *Parser) SyntaxError(msg string) *SyntaxError {
-	return &SyntaxError{Msg: msg, Position: p.nextPos}
+	return &SyntaxError{Msg: msg, Position: p.nextPos()}
+}
+
+func (p *Parser) nextPos() Position {
+	// TODO: return p.Peek().Pos
+	return Position{}
 }
 
 func (p *Parser) init() {
-	if p.next != (Token{}) {
+	if p.next[0] != (Token{}) {
 		panic("parser: init called twice")
 	}
-	p.Next()
+	for i := 0; i < readAhead; i++ {
+		p.Next()
+	}
 }
