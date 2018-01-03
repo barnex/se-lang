@@ -22,17 +22,12 @@ func main() {
 			fmt.Println(err)
 			continue
 		}
-		fmt.Println(e.ToString(expr))
-		//eval(expr)
+		fmt.Print(e.ToString(expr), ": ")
+		n, err := e.EvalNode(expr)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		fmt.Println(e.ToString(n))
 	}
 }
-
-//func eval(expr e.Node) {
-//	defer func() {
-//		if err := recover(); err != nil {
-//			fmt.Println(err)
-//		}
-//	}()
-//
-//	fmt.Println(expr.Eval())
-//}

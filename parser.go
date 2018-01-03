@@ -25,6 +25,15 @@ func NewParser(src io.Reader) *Parser {
 const panicOnErr = false
 
 func (p *Parser) Parse() (_ Node, e error) {
+	return withCatch(func() Node {
+		p.init()
+		program := p.PExpr()
+		p.Expect(TEOF)
+		return program
+	})
+}
+
+func withCatch(f func() Node) (_ Node, e error) {
 	// catch syntax errors
 	if !panicOnErr {
 		defer func() {
@@ -38,11 +47,7 @@ func (p *Parser) Parse() (_ Node, e error) {
 			}
 		}()
 	}
-
-	p.init()
-	program := p.PExpr()
-	p.Expect(TEOF)
-	return program, nil
+	return f(), nil
 }
 
 // --------

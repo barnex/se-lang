@@ -14,6 +14,7 @@ var (
 	_ Node = (*Num)(nil)
 	_ Node = (*Ident)(nil)
 	_ Node = (List)(nil)
+	_ Node = (Func)(nil)
 )
 
 type Num struct {
@@ -30,6 +31,20 @@ type Ident struct {
 
 func (n *Ident) PrintTo(w io.Writer) {
 	fmt.Fprint(w, n.Name)
+}
+
+type Applier interface {
+	Apply(List) Node
+}
+
+type Func func(List) Node
+
+func (f Func) PrintTo(w io.Writer) {
+	fmt.Fprint(w, "func", f)
+}
+
+func (f Func) Apply(l List) Node {
+	return f(l)
 }
 
 type List []Node
@@ -68,44 +83,3 @@ func ToString(e Node) string {
 	e.PrintTo(&buf)
 	return buf.String()
 }
-
-// -------- Value
-//type Value = reflect.Value
-//
-//
-//var scope = map[string]reflect.Value{
-//	"sqrt": reflect.ValueOf(math.Sqrt),
-//	"+":    reflect.ValueOf(add),
-//	"-":    reflect.ValueOf(sub),
-//	"*":    reflect.ValueOf(mul),
-//	"/":    reflect.ValueOf(div),
-//}
-//
-//func add(x, y float64) float64 { return x + y }
-//func sub(x, y float64) float64 { return x - y }
-//func mul(x, y float64) float64 { return x * y }
-//func div(x, y float64) float64 { return x / y }
-//
-//func (n *Ident) Eval() Value {
-//	if v, ok := scope[n.Name]; ok {
-//		return v
-//	}
-//	panic("undefined: " + n.Name)
-//}
-//
-////func (n *Call) Eval() Value {
-////	f := n.Car.Eval()
-////	args := make([]Value, len(n.Cdr))
-////	for i, a := range n.Cdr {
-////		args[i] = a.Eval()
-////	}
-////	ret := f.Call(args)
-////	if n := len(ret); n != 1 {
-////		panic(fmt.Sprint(n, "return values"))
-////	}
-////	return ret[0]
-////}
-//
-//func (n *List) Eval() Value {
-//	panic("TODO")
-//}
