@@ -13,8 +13,8 @@ type Node interface {
 var (
 	_ Node = (*Num)(nil)
 	_ Node = (*Ident)(nil)
-	_ Node = (List)(nil)
-	_ Node = Local{}
+	_ Node = (*Call)(nil)
+	_ Node = (*Lambda)(nil)
 )
 
 type Num struct {
@@ -26,47 +26,50 @@ func (n *Num) PrintTo(w io.Writer) {
 }
 
 type Ident struct {
-	Name  string
-	Value Node // if name is resolved
+	Name string
 }
 
 func (n *Ident) PrintTo(w io.Writer) {
 	fmt.Fprint(w, n.Name)
 }
 
-type Local struct {
-	N int
+type Call struct {
+	F    Node
+	Args []Node
 }
 
-func (n Local) PrintTo(w io.Writer) {
-	fmt.Fprint(w, "local", n.N)
+func (n *Call) PrintTo(w io.Writer) {
+	n.F.PrintTo(w)
+	printList(w, n.Args)
 }
 
-type List []Node
-
-func (l List) Car() Node {
-	if len(l) == 0 {
-		return nil
-	}
-	return l[0]
+type Lambda struct {
+	Args []*Ident
+	Body Node
 }
 
-func (l List) Cdr() List {
-	return l[1:]
+func (n *Lambda) PrintTo(w io.Writer) {
+	printIdents(w, n.Args)
+	fmt.Fprint(w, TLambda)
+	n.Body.PrintTo(w)
 }
 
-func MakeList(car Node, cdr ...Node) List {
-	a := make(List, 1+len(cdr))
-	a[0] = car
-	copy(a[1:], cdr)
-	return a
-}
-
-func (n List) PrintTo(w io.Writer) {
+func printList(w io.Writer, l []Node) {
 	fmt.Fprint(w, "(")
-	for i, a := range n {
+	for i, a := range l {
 		if i != 0 {
-			fmt.Fprint(w, " ")
+			fmt.Fprint(w, ", ")
+		}
+		a.PrintTo(w)
+	}
+	fmt.Fprint(w, ")")
+}
+
+func printIdents(w io.Writer, l []*Ident) {
+	fmt.Fprint(w, "(")
+	for i, a := range l {
+		if i != 0 {
+			fmt.Fprint(w, ", ")
 		}
 		a.PrintTo(w)
 	}

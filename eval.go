@@ -2,37 +2,31 @@ package e
 
 import (
 	"fmt"
-	"io"
 )
 
 func EvalSafe(n Node) (Node, error) {
-	return withCatch(func() Node {
-		Resolve(&prelude, n)
-		return eval(&Machine{}, n)
-	})
+	return nil, fmt.Errorf("todo")
+	//return withCatch(func() Node {
+	//	Resolve(&prelude, n)
+	//	return eval(&Machine{}, n)
+	//})
 }
 
-func eval(m *Machine, n Node) Node {
-	switch n := n.(type) {
-	default:
-		panic(fmt.Sprintf("bug: %T %v", n, n))
-	case Func:
-		return n
-	case *Num:
-		return n
-	case *Ident:
-		return n.Value // presumably Resolved before
-	case Local:
-		return m.Get(-(n.N + 1))
-	case List:
-		return evalList(m, n)
-	}
-}
-
-func evalList(m *Machine, l List) Node {
-	return eval(m, l.Car()).(Applier).Apply(m, l.Cdr())
-}
-
+//func eval(m *Machine, n Node) Node {
+//	switch n := n.(type) {
+//	default:
+//		panic(fmt.Sprintf("bug: %T %v", n, n))
+//	//case Func:
+//	//	return n
+//	case *Num:
+//		return n
+//		//case *Ident:
+//		//	return n.Value // presumably Resolved before
+//		//	case Local:
+//		//		return m.Get(-(n.N + 1))
+//	}
+//}
+//
 //func add(e *Env, l List) Node {
 //	sum := 0.0
 //	for _, n := range l {
@@ -54,16 +48,16 @@ func evalList(m *Machine, l List) Node {
 //}
 // _ Node = (Func)(nil)
 
-type Applier interface {
-	Apply(*Machine, List) Node
-}
-
-type Func func(*Machine, List) Node
-
-func (f Func) PrintTo(w io.Writer) {
-	fmt.Fprint(w, "func", f)
-}
-
-func (f Func) Apply(m *Machine, l List) Node {
-	return f(m, l)
-}
+//type Applier interface {
+//	Apply(*Machine, List) Node
+//}
+//
+//type Func func(*Machine, List) Node
+//
+//func (f Func) PrintTo(w io.Writer) {
+//	fmt.Fprint(w, "func", f)
+//}
+//
+//func (f Func) Apply(m *Machine, l List) Node {
+//	return f(m, l)
+//}

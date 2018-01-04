@@ -1,7 +1,6 @@
 package e
 
 import (
-	"math"
 	"reflect"
 	"strings"
 	"testing"
@@ -12,11 +11,11 @@ func TestEval(t *testing.T) {
 		src  string
 		want Node
 	}{
-		{`1`, num(1)},
-		{`pi`, num(math.Pi)},
-		//{`1+1`, num(2)},
-		//{`1+2*3`, num(7)},
-		//{`1*2+3`, num(5)},
+	//{`1`, num(1)},
+	//{`pi`, num(math.Pi)},
+	//{`1+1`, num(2)},
+	//{`1+2*3`, num(7)},
+	//{`1*2+3`, num(5)},
 	}
 
 	for _, c := range cases {

@@ -21,9 +21,6 @@ func NewParser(src io.Reader) *Parser {
 	return &Parser{lex: *NewLexer(src)}
 }
 
-// debug: panic on parse error
-const panicOnErr = false
-
 func (p *Parser) Parse() (_ Node, e error) {
 	return withCatch(func() Node {
 		p.init()
@@ -32,6 +29,9 @@ func (p *Parser) Parse() (_ Node, e error) {
 		return program
 	})
 }
+
+// debug: panic on parse error
+const panicOnErr = false
 
 func withCatch(f func() Node) (_ Node, e error) {
 	// catch syntax errors
@@ -71,11 +71,11 @@ func (p *Parser) PExpr() Node {
 //  | () -> expr1
 //  | (ident,...) -> expr1
 func (p *Parser) PLambda() Node {
-	var args List
+	var args []*Ident
 
 	// ident -> expr
 	if p.HasPeek(TIdent) {
-		args = List{p.PIdent()}
+		args = []*Ident{p.PIdent()}
 	} else {
 		args = p.PIdentList()
 	}
@@ -83,15 +83,15 @@ func (p *Parser) PLambda() Node {
 	p.Expect(TLambda)
 
 	body := p.PExpr()
-	return List{ident("lambda"), args, body}
+	return &Lambda{args, body}
 }
 
 // identlist:
 //  | ()
 //  | (ident,...)
-func (p *Parser) PIdentList() List {
+func (p *Parser) PIdentList() []*Ident {
 	p.Expect(TLParen)
-	var l List
+	var l []*Ident
 
 	//()
 	if p.Accept(TRParen) {
@@ -123,7 +123,7 @@ func (p *Parser) PBinary(prec1 int) Node {
 		for precedence[p.Peek().TType] == prec {
 			op := p.Next()
 			rhs := p.PBinary(prec + 1)
-			lhs = MakeList(ident(opFunc(op.TType)), lhs, rhs)
+			lhs = &Call{&Ident{opFunc(op.TType)}, []Node{lhs, rhs}}
 		}
 	}
 	return lhs
@@ -157,7 +157,7 @@ func (p *Parser) POperand() Node {
 
 	// - operand
 	if p.Accept(TMinus) {
-		return List{ident("neg"), p.POperand()}
+		return &Call{&Ident{"neg"}, []Node{p.POperand()}}
 	}
 
 	// num, ident, parenexpr
@@ -173,10 +173,10 @@ func (p *Parser) POperand() Node {
 		panic(p.Unexpected(p.Next()))
 	}
 
-	// operand *(list)
+	// operand *(list): function call
 	for p.PeekTT() == TLParen {
 		args := p.PArgList()
-		expr = MakeList(expr, args...)
+		expr = &Call{expr, args}
 	}
 
 	return expr
@@ -193,9 +193,9 @@ func (p *Parser) PNum() Node {
 }
 
 // parse an identifier
-func (p *Parser) PIdent() Node {
+func (p *Parser) PIdent() *Ident {
 	tok := p.Expect(TIdent)
-	return ident(tok.Value)
+	return &Ident{tok.Value}
 }
 
 // parse a parenthesized argument list:
@@ -221,9 +221,9 @@ func (p *Parser) PArgList() []Node {
 
 func (p *Parser) PParenExpr() Node {
 	p.Expect(TLParen)
-	if p.Accept(TRParen) {
-		return List{}
-	}
+	//if p.Accept(TRParen) {
+	//	return List{}
+	//}
 	expr := p.PExpr()
 	p.Expect(TRParen)
 	return expr
@@ -307,15 +307,4 @@ func (p *Parser) init() {
 	for i := 0; i < readAhead; i++ {
 		p.Next()
 	}
-}
-
-func num(v float64) Node     { return &Num{v} }
-func ident(n string) Node    { return &Ident{Name: n} }
-func list(args ...Node) Node { return List(normalize(args)) }
-func normalize(x []Node) []Node {
-	if x == nil {
-		return []Node{}
-		// reflect.DeepEqual considers nil different from empty list
-	}
-	return x
 }

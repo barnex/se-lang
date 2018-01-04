@@ -10,15 +10,14 @@ import (
 func TestParseExpr(t *testing.T) {
 
 	var (
-		add    = ident("add")
-		f      = ident("f")
-		lambda = ident("lambda")
-		mul    = ident("mul")
-		neg    = ident("neg")
-		one    = num(1)
-		x      = ident("x")
-		y      = ident("y")
-		z      = ident("z")
+		add = ident("add")
+		f   = ident("f")
+		mul = ident("mul")
+		neg = ident("neg")
+		one = num(1)
+		x   = ident("x")
+		y   = ident("y")
+		z   = ident("z")
 	)
 
 	cases := []struct {
@@ -27,38 +26,38 @@ func TestParseExpr(t *testing.T) {
 	}{
 		// operand
 		//  | - operand
-		{`--1`, list(neg, list(neg, one))},
-		{`-1`, list(neg, one)},
-		{`-f`, list(neg, f)},
-		{`-(f)`, list(neg, f)},
+		{`--1`, call(neg, call(neg, one))},
+		{`-1`, call(neg, one)},
+		{`-f`, call(neg, f)},
+		{`-(f)`, call(neg, f)},
 		//  | num
 		{`1`, one},
 		//  | ident
 		{`f`, f},
 		//  | ( expr )
-		{`(-1)`, list(neg, num(1))},
+		{`(-1)`, call(neg, num(1))},
 		{`(1)`, num(1)},
 		{`(f)`, f},
 		{`((f))`, f},
 		//  | operand *(list)
-		{`f()`, list(f)},
-		{`f(x)`, list(f, x)},
-		{`f(x,y,z)`, list(f, x, y, z)},
-		{`(f)(x,y,z)()`, list(list(f, x, y, z))},
+		{`f()`, call(f)},
+		{`f(x)`, call(f, x)},
+		{`f(x,y,z)`, call(f, x, y, z)},
+		{`(f)(x,y,z)()`, call(call(f, x, y, z))},
 
 		// random
-		{`(f)(x)`, list(f, x)},
-		{`f(x)(y)`, list(list(f, x), y)},
-		{`1+2+3`, list(add, list(add, num(1), num(2)), num(3))},
-		{`1+2*3`, list(add, num(1), list(mul, num(2), num(3)))},
-		{`1*2+3`, list(add, list(mul, num(1), num(2)), num(3))},
+		{`(f)(x)`, call(f, x)},
+		{`f(x)(y)`, call(call(f, x), y)},
+		{`1+2+3`, call(add, call(add, num(1), num(2)), num(3))},
+		{`1+2*3`, call(add, num(1), call(mul, num(2), num(3)))},
+		{`1*2+3`, call(add, call(mul, num(1), num(2)), num(3))},
 
 		// lambda
-		{`x->y`, list(lambda, list(x), y)},
-		{`x->-y`, list(lambda, list(x), list(neg, y))},
-		{`(x,y)->f(y,x)`, list(lambda, list(x, y), list(f, y, x))},
-		{`(x,y)->f(y,x)()`, list(lambda, list(x, y), list(list(f, y, x)))},
-		{`((x,y)->y+x)()`, list(list(lambda, list(x, y), list(add, y, x)))},
+		{`x->y`, lambda(args(x), y)},
+		{`x->-y`, lambda(args(x), call(neg, y))},
+		{`(x,y)->f(y,x)`, lambda(args(x, y), call(f, y, x))},
+		{`(x,y)->f(y,x)()`, lambda(args(x, y), call(call(f, y, x)))},
+		{`((x,y)->y+x)()`, call(lambda(args(x, y), call(add, y, x)))},
 	}
 
 	for i, c := range cases {
@@ -155,4 +154,18 @@ func TestParseToString(t *testing.T) {
 
 func parse(src string) (Node, error) {
 	return Parse(strings.NewReader(src))
+}
+
+func num(v float64) Node                   { return &Num{v} }
+func ident(n string) *Ident                { return &Ident{Name: n} }
+func call(f Node, args ...Node) Node       { return &Call{f, normalize(args)} }
+func lambda(args []*Ident, body Node) Node { return &Lambda{args, body} }
+func args(n ...*Ident) []*Ident            { return n }
+
+func normalize(x []Node) []Node {
+	if x == nil {
+		return []Node{}
+		// reflect.DeepEqual considers nil different from empty list
+	}
+	return x
 }
