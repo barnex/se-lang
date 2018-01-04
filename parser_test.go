@@ -156,15 +156,3 @@ func TestParseToString(t *testing.T) {
 func parse(src string) (Node, error) {
 	return Parse(strings.NewReader(src))
 }
-
-func num(v float64) Node     { return &Num{v} }
-func ident(n string) Node    { return &Ident{n} }
-func list(args ...Node) Node { return List(normalize(args)) }
-
-func normalize(x []Node) []Node {
-	if x == nil {
-		return []Node{}
-		// reflect.DeepEqual considers nil different from empty list
-	}
-	return x
-}

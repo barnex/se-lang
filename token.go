@@ -44,6 +44,7 @@ const (
 	TMinus  // -
 	TMul    // *
 	TNum    // number
+	TQuote  // '
 	TRBrace // }
 	TRParen // )
 	TString // string
@@ -67,6 +68,7 @@ var ttypeString = map[TType]string{
 	TMinus:  "-",
 	TMul:    "*",
 	TNum:    "number",
+	TQuote:  "'",
 	TRBrace: "}",
 	TRParen: ")",
 	TString: "string",

@@ -41,6 +41,7 @@ func TestLex(t *testing.T) {
 		{`""`, []Token{{TString, `""`}}},
 		{`a+b*c`, []Token{{TIdent, "a"}, {TAdd, "+"}, {TIdent, "b"}, {TMul, "*"}, {TIdent, "c"}}},
 		{`a==b`, []Token{{TIdent, "a"}, {TEquals, "=="}, {TIdent, "b"}}},
+		{`'x`, []Token{{TQuote, "'"}, {TIdent, "x"}}},
 	}
 
 	for _, c := range cases {

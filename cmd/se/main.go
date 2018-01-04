@@ -23,7 +23,7 @@ func main() {
 			continue
 		}
 		fmt.Print(e.ToString(expr), ": ")
-		n, err := e.EvalNode(expr)
+		n, err := e.EvalSafe(expr)
 		if err != nil {
 			fmt.Println(err)
 			continue

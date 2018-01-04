@@ -83,7 +83,7 @@ func (p *Parser) PLambda() Node {
 	p.Expect(TLambda)
 
 	body := p.PExpr()
-	return List{&Ident{"lambda"}, args, body}
+	return List{ident("lambda"), args, body}
 }
 
 // identlist:
@@ -123,7 +123,7 @@ func (p *Parser) PBinary(prec1 int) Node {
 		for precedence[p.Peek().TType] == prec {
 			op := p.Next()
 			rhs := p.PBinary(prec + 1)
-			lhs = MakeList(&Ident{opFunc(op.TType)}, lhs, rhs)
+			lhs = MakeList(ident(opFunc(op.TType)), lhs, rhs)
 		}
 	}
 	return lhs
@@ -157,7 +157,7 @@ func (p *Parser) POperand() Node {
 
 	// - operand
 	if p.Accept(TMinus) {
-		return List{&Ident{"neg"}, p.POperand()}
+		return List{ident("neg"), p.POperand()}
 	}
 
 	// num, ident, parenexpr
@@ -195,7 +195,7 @@ func (p *Parser) PNum() Node {
 // parse an identifier
 func (p *Parser) PIdent() Node {
 	tok := p.Expect(TIdent)
-	return &Ident{tok.Value}
+	return ident(tok.Value)
 }
 
 // parse a parenthesized argument list:
@@ -307,4 +307,15 @@ func (p *Parser) init() {
 	for i := 0; i < readAhead; i++ {
 		p.Next()
 	}
+}
+
+func num(v float64) Node     { return &Num{v} }
+func ident(n string) Node    { return &Ident{Name: n} }
+func list(args ...Node) Node { return List(normalize(args)) }
+func normalize(x []Node) []Node {
+	if x == nil {
+		return []Node{}
+		// reflect.DeepEqual considers nil different from empty list
+	}
+	return x
 }

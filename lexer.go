@@ -18,7 +18,12 @@ func NewLexer(src io.Reader) *Lexer {
 			Position: Position{s.Position},
 		})
 	}
-	l.s.Mode = scanner.ScanIdents | scanner.ScanInts | scanner.ScanFloats | scanner.ScanStrings | scanner.SkipComments | scanner.ScanComments
+	l.s.Mode = scanner.ScanIdents |
+		scanner.ScanInts |
+		scanner.ScanFloats |
+		scanner.ScanStrings |
+		scanner.SkipComments |
+		scanner.ScanComments
 	return l
 }
 
@@ -56,6 +61,8 @@ func (l *Lexer) Next() Token {
 		ttype = TLBrace
 	case '}':
 		ttype = TRBrace
+	case 39:
+		ttype = TQuote
 	}
 	if ttype != 0 {
 		return Token{ttype, txt}

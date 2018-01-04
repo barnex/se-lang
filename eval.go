@@ -2,20 +2,17 @@ package e
 
 import (
 	"fmt"
+	"io"
 )
 
-//func Eval(src string) (Node, error) {
-//	fmt.Println("eval", src)
-//	return withCatch(NewParser(strings.NewReader(src)).PExpr)
-//}
-
-func EvalNode(n Node) (Node, error) {
+func EvalSafe(n Node) (Node, error) {
 	return withCatch(func() Node {
-		return eval(&scope, n)
+		Resolve(&prelude, n)
+		return eval(&Machine{}, n)
 	})
 }
 
-func eval(e *Env, n Node) Node {
+func eval(m *Machine, n Node) Node {
 	switch n := n.(type) {
 	default:
 		panic(fmt.Sprintf("bug: %T %v", n, n))
@@ -24,63 +21,49 @@ func eval(e *Env, n Node) Node {
 	case *Num:
 		return n
 	case *Ident:
-		return e.Lookup(n.Name)
+		return n.Value // presumably Resolved before
+	case Local:
+		return m.Get(-(n.N + 1))
 	case List:
-		return evalList(e, n)
+		return evalList(m, n)
 	}
 }
 
-var scope = Env{symbols: make(map[string]Node)}
-
-type Env struct {
-	parent  *Env
-	symbols map[string]Node
+func evalList(m *Machine, l List) Node {
+	return eval(m, l.Car()).(Applier).Apply(m, l.Cdr())
 }
 
-func (e *Env) Lookup(name string) Node {
-	if n, ok := e.symbols[name]; ok {
-		return n
-	}
-	if e.parent == nil {
-		panic(SyntaxErrorf("undefined: %v", name))
-	}
-	return e.parent.Lookup(name)
+//func add(e *Env, l List) Node {
+//	sum := 0.0
+//	for _, n := range l {
+//		sum += eval(e, n).(*Num).Value
+//	}
+//	return &Num{sum}
+//}
+//
+//func mul(e *Env, l List) Node {
+//	prod := 1.0
+//	for _, n := range l {
+//		prod *= eval(e, n).(*Num).Value
+//	}
+//	return &Num{prod}
+//}
+//
+//func lambda(e *Env, l List) Node {
+//	panic("todo")
+//}
+// _ Node = (Func)(nil)
+
+type Applier interface {
+	Apply(*Machine, List) Node
 }
 
-func (e *Env) Def(name string, value Node) {
-	if _, ok := e.symbols[name]; ok {
-		panic(SyntaxErrorf("already defined: %v", name))
-	}
-	e.symbols[name] = value
+type Func func(*Machine, List) Node
+
+func (f Func) PrintTo(w io.Writer) {
+	fmt.Fprint(w, "func", f)
 }
 
-func init() {
-	scope.Def("lisp", Func(evalList))
-	scope.Def("add", Func(add))
-	scope.Def("mul", Func(mul))
-	scope.Def("lambda", Func(lambda))
-}
-
-func evalList(e *Env, l List) Node {
-	return eval(e, l.Car()).(Applier).Apply(l.Cdr())
-}
-
-func add(l List) Node {
-	sum := 0.0
-	for _, n := range l {
-		sum += eval(n).(*Num).Value
-	}
-	return &Num{sum}
-}
-
-func mul(l List) Node {
-	prod := 1.0
-	for _, n := range l {
-		prod *= eval(n).(*Num).Value
-	}
-	return &Num{prod}
-}
-
-func lambda(l List) Node {
-
+func (f Func) Apply(m *Machine, l List) Node {
+	return f(m, l)
 }

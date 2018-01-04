@@ -14,7 +14,7 @@ var (
 	_ Node = (*Num)(nil)
 	_ Node = (*Ident)(nil)
 	_ Node = (List)(nil)
-	_ Node = (Func)(nil)
+	_ Node = Local{}
 )
 
 type Num struct {
@@ -26,25 +26,20 @@ func (n *Num) PrintTo(w io.Writer) {
 }
 
 type Ident struct {
-	Name string
+	Name  string
+	Value Node // if name is resolved
 }
 
 func (n *Ident) PrintTo(w io.Writer) {
 	fmt.Fprint(w, n.Name)
 }
 
-type Applier interface {
-	Apply(List) Node
+type Local struct {
+	N int
 }
 
-type Func func(List) Node
-
-func (f Func) PrintTo(w io.Writer) {
-	fmt.Fprint(w, "func", f)
-}
-
-func (f Func) Apply(l List) Node {
-	return f(l)
+func (n Local) PrintTo(w io.Writer) {
+	fmt.Fprint(w, "local", n.N)
 }
 
 type List []Node
