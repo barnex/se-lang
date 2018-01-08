@@ -21,8 +21,6 @@ func (t Token) String() string {
 }
 
 // TType is a token type.
-// Positive values are just unicode runes,
-// Negative values are defined below.
 type TType int
 
 const (
