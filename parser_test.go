@@ -1,4 +1,4 @@
-package e
+package se
 
 import (
 	"reflect"
@@ -54,6 +54,7 @@ func TestParseExpr(t *testing.T) {
 
 		// lambda
 		{`x->y`, lambda(args(x), y)},
+		{`(x)->(x)`, lambda(args(x), x)},
 		{`x->-y`, lambda(args(x), call(neg, y))},
 		{`(x,y)->f(y,x)`, lambda(args(x, y), call(f, y, x))},
 		{`(x,y)->f(y,x)()`, lambda(args(x, y), call(call(f, y, x)))},
@@ -159,7 +160,7 @@ func parse(src string) (Node, error) {
 func num(v float64) Node                   { return &Num{v} }
 func ident(n string) *Ident                { return &Ident{Name: n} }
 func call(f Node, args ...Node) Node       { return &Call{f, normalize(args)} }
-func lambda(args []*Ident, body Node) Node { return &Lambda{args, body} }
+func lambda(args []*Ident, body Node) Node { return &Lambda{Args: args, Body: body} }
 func args(n ...*Ident) []*Ident            { return n }
 
 func normalize(x []Node) []Node {

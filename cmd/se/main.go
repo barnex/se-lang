@@ -17,17 +17,17 @@ func main() {
 		if err != nil {
 			return // EOF
 		}
-		expr, err := e.Parse(bytes.NewReader(src))
+		expr, err := se.Parse(bytes.NewReader(src))
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		fmt.Print(e.ToString(expr), ": ")
-		n, err := e.EvalSafe(expr)
+		fmt.Print(se.ToString(expr), ": ")
+		prog, err := se.Compile(bytes.NewReader(src))
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		fmt.Println(e.ToString(n))
+		fmt.Println(prog.Eval())
 	}
 }

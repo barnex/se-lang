@@ -1,4 +1,4 @@
-package e
+package se
 
 type Machine struct {
 	stack []Node

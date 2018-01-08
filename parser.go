@@ -1,4 +1,4 @@
-package e
+package se
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ type Parser struct {
 	next [readAhead]Token
 }
 
-const readAhead = 3
+const readAhead = 4
 
 func NewParser(src io.Reader) *Parser {
 	return &Parser{lex: *NewLexer(src)}
@@ -56,10 +56,11 @@ func withCatch(f func() Node) (_ Node, e error) {
 // 	| expr1
 //  | lambda
 func (p *Parser) PExpr() Node {
-	// peek for lambda: "()" or "(ident," or "ident->"
+	// peek for lambda: "()" or "(ident," or "ident->" or "(ident)->"
 	if p.HasPeek(TLParen, TRParen) ||
 		p.HasPeek(TLParen, TIdent, TComma) ||
-		p.HasPeek(TIdent, TLambda) {
+		p.HasPeek(TIdent, TLambda) ||
+		p.HasPeek(TLParen, TIdent, TRParen, TLambda) {
 		return p.PLambda()
 	} else {
 		return p.PExpr1()
@@ -69,6 +70,7 @@ func (p *Parser) PExpr() Node {
 // lambda:
 //  | ident -> expr1
 //  | () -> expr1
+//  | (ident) -> expr1
 //  | (ident,...) -> expr1
 func (p *Parser) PLambda() Node {
 	var args []*Ident
@@ -83,7 +85,7 @@ func (p *Parser) PLambda() Node {
 	p.Expect(TLambda)
 
 	body := p.PExpr()
-	return &Lambda{args, body}
+	return &Lambda{Args: args, Body: body}
 }
 
 // identlist:
@@ -123,7 +125,7 @@ func (p *Parser) PBinary(prec1 int) Node {
 		for precedence[p.Peek().TType] == prec {
 			op := p.Next()
 			rhs := p.PBinary(prec + 1)
-			lhs = &Call{&Ident{opFunc(op.TType)}, []Node{lhs, rhs}}
+			lhs = &Call{&Ident{Name: opFunc(op.TType)}, []Node{lhs, rhs}}
 		}
 	}
 	return lhs
@@ -157,7 +159,7 @@ func (p *Parser) POperand() Node {
 
 	// - operand
 	if p.Accept(TMinus) {
-		return &Call{&Ident{"neg"}, []Node{p.POperand()}}
+		return &Call{&Ident{Name: "neg"}, []Node{p.POperand()}}
 	}
 
 	// num, ident, parenexpr
@@ -195,7 +197,7 @@ func (p *Parser) PNum() Node {
 // parse an identifier
 func (p *Parser) PIdent() *Ident {
 	tok := p.Expect(TIdent)
-	return &Ident{tok.Value}
+	return &Ident{Name: tok.Value}
 }
 
 // parse a parenthesized argument list:

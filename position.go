@@ -1,4 +1,4 @@
-package e
+package se
 
 import "text/scanner"
 

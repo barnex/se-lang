@@ -1,4 +1,4 @@
-package e
+package se
 
 import (
 	"fmt"
@@ -26,28 +26,28 @@ func (t Token) String() string {
 type TType int
 
 const (
-	tError  = iota
-	TAdd    // +
-	TAssign // =
-	TComma  // ,
-	TDiv    // /
-	TEOF    // end-of-file
-	TEquals // ==
-	TGe     // >=
-	TGt     // >
-	TIdent  // identifer
-	TLBrace // {
-	TLParen // (
-	TLambda // ->
-	TLe     // <=
-	TLt     // <
-	TMinus  // -
-	TMul    // *
-	TNum    // number
-	TQuote  // '
-	TRBrace // }
-	TRParen // )
-	TString // string
+	tError  TType = iota
+	TAdd          // +
+	TAssign       // =
+	TComma        // ,
+	TDiv          // /
+	TEOF          // end-of-file
+	TEquals       // ==
+	TGe           // >=
+	TGt           // >
+	TIdent        // identifer
+	TLBrace       // {
+	TLParen       // (
+	TLambda       // ->
+	TLe           // <=
+	TLt           // <
+	TMinus        // -
+	TMul          // *
+	TNum          // number
+	TQuote        // '
+	TRBrace       // }
+	TRParen       // )
+	TString       // string
 )
 
 var ttypeString = map[TType]string{

@@ -1,4 +1,4 @@
-package e
+package se
 
 import (
 	"bytes"
@@ -21,12 +21,17 @@ type Num struct {
 	Value float64
 }
 
+func (n *Num) Eval() Value {
+	return n.Value
+}
+
 func (n *Num) PrintTo(w io.Writer) {
 	fmt.Fprint(w, n.Value)
 }
 
 type Ident struct {
 	Name string
+	Prog
 }
 
 func (n *Ident) PrintTo(w io.Writer) {
@@ -38,20 +43,13 @@ type Call struct {
 	Args []Node
 }
 
+func (n *Call) Eval() Value {
+	panic("todo: Call.Eval")
+}
+
 func (n *Call) PrintTo(w io.Writer) {
 	n.F.PrintTo(w)
 	printList(w, n.Args)
-}
-
-type Lambda struct {
-	Args []*Ident
-	Body Node
-}
-
-func (n *Lambda) PrintTo(w io.Writer) {
-	printIdents(w, n.Args)
-	fmt.Fprint(w, TLambda)
-	n.Body.PrintTo(w)
 }
 
 func printList(w io.Writer, l []Node) {
