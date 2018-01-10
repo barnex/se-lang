@@ -1,7 +1,20 @@
 package se
 
+import (
+	"fmt"
+	"io"
+)
+
 type Stack struct {
+	ID    int
 	stack []Value
+}
+
+var stackID int
+
+func NewStack() *Stack {
+	stackID++
+	return &Stack{stackID, nil}
 }
 
 func (s *Stack) Push(v Value) {
@@ -18,9 +31,9 @@ func (s *Stack) Eval() Value {
 	return s.stack[len(s.stack)-1]
 }
 
-//func (s *Stack) Get(off int) Node {
-//	return m.stack[len(m.stack)-off]
-//}
+func (s *Stack) PrintTo(w io.Writer) {
+	fmt.Fprint(w, ":", s.ID)
+}
 
 func (s *Stack) AddStack(delta int) {
 	new := len(s.stack) + delta

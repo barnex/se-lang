@@ -2,6 +2,7 @@ package se
 
 import (
 	"fmt"
+	"io"
 	"reflect"
 )
 
@@ -28,4 +29,5 @@ func (f ReflectFunc) Apply(args []Value) Value {
 	return ret[0].Interface()
 }
 
-func (f ReflectFunc) Eval() Value { return Value(f) }
+func (f ReflectFunc) Eval() Value               { return Value(f) }
+func (f ReflectFunc) PrintTo(w io.Writer) Value { return Value(f) }

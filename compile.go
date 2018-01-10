@@ -26,6 +26,7 @@ func Compile(src io.Reader) (_ Prog, e error) {
 
 type Prog interface {
 	Eval() interface{}
+	Node
 }
 
 func compileProg(n Node) Prog {
@@ -50,7 +51,7 @@ func gatherDefs(s *Scope, n Node) {
 		s = s.New()
 		n.scope = s
 		for _, id := range n.Args {
-			s.Def(id.Name, &Stack{})
+			s.Def(id.Name, NewStack())
 		}
 		gatherDefs(s, n.Body)
 	}
@@ -93,6 +94,18 @@ func (n *PCall) Eval() Value {
 	return n.F.Eval().(Applier).Apply(args)
 }
 
+func (n *PCall) PrintTo(w io.Writer) {
+	n.F.PrintTo(w)
+	fmt.Fprint(w, "(")
+	for i, a := range n.Args {
+		if i != 0 {
+			fmt.Fprint(w, ", ")
+		}
+		a.PrintTo(w)
+	}
+	fmt.Fprint(w, ")")
+}
+
 func compileLambda(s *Scope, n *Lambda) Prog {
 	args := make([]*Stack, len(n.Args))
 	for i := range args {
@@ -111,6 +124,19 @@ type PLambda struct {
 
 func (n *PLambda) Eval() interface{} {
 	return n
+}
+
+func (n *PLambda) PrintTo(w io.Writer) {
+	fmt.Fprint(w, "(")
+	for i, a := range n.Args {
+		if i != 0 {
+			fmt.Fprint(w, ", ")
+		}
+		a.PrintTo(w)
+	}
+	fmt.Fprint(w, ")->(")
+	n.Body.PrintTo(w)
+	fmt.Fprint(w, ")")
 }
 
 func (n *PLambda) Apply(args []Value) Value {

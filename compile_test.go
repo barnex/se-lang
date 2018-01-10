@@ -21,6 +21,7 @@ func TestCompile(t *testing.T) {
 		{`((x,y)->x+y)(1,2)`, 3.0},                 // lambda: sum
 		{`((f,i)->f(i))((x->x*x), 3)`, 9.0},        // lambda: apply f to i
 		{`( (f,i)->f(f(i)) ) ( (x->x*2), 1)`, 4.0}, // lambda: apply f twice
+		{`(x->y->x+y)(1)(2)`, 3.0},                 // closure
 		//{`((f,i)->f(i))(x->x*x, 3)`, 9.0},
 		//{`d->x->x+d`, 1.0},
 	}
