@@ -23,15 +23,16 @@ func (n *Num) PrintTo(w io.Writer) {
 
 // Ident is an identifier Node, e.g.: 'sqrt'
 type Ident struct {
-	Name                string
-	enclosing, defining *Scope
+	Name string
+	ID   int
+	//enclosing, defining *Scope
 }
 
 func (n *Ident) PrintTo(w io.Writer) {
 	fmt.Fprint(w, n.Name)
-	//if n.Stack.ID != 0 {
-	//	fmt.Fprint(w, ":", n.ID)
-	//}
+	if n.ID != 0 {
+		fmt.Fprint(w, ":", n.ID)
+	}
 }
 
 // Call is a function call Node, e.g.: 'sqrt(2)'
