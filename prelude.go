@@ -1,11 +1,23 @@
 package se
 
-var prelude = Scope{symbols: map[string]*Ident{
-//"pi":  Const{ValueOf(math.Pi)},
-//"add": ReflectFunc(reflect.ValueOf(add)),
-//"mul": ReflectFunc(reflect.ValueOf(mul)),
+var prelude = &globals{map[string]*Global{
+	"add": &Global{"add"},
+	"mul": &Global{"mul"},
 }}
 
+type globals struct {
+	m map[string]*Global
+}
+
+func (g *globals) Find(name string) Var {
+	if v, ok := g.m[name]; ok {
+		return v
+	} else {
+		return nil
+	}
+}
+
+//
 //func add(x, y float64) float64 { return x + y }
 //func mul(x, y float64) float64 { return x * y }
 //

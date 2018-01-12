@@ -24,15 +24,11 @@ func (n *Num) PrintTo(w io.Writer) {
 // Ident is an identifier Node, e.g.: 'sqrt'
 type Ident struct {
 	Name string
-	ID   int
-	//enclosing, defining *Scope
+	Var  Var
 }
 
 func (n *Ident) PrintTo(w io.Writer) {
 	fmt.Fprint(w, n.Name)
-	if n.ID != 0 {
-		fmt.Fprint(w, ":", n.ID)
-	}
 }
 
 // Call is a function call Node, e.g.: 'sqrt(2)'
@@ -48,9 +44,11 @@ func (n *Call) PrintTo(w io.Writer) {
 
 // Lambda is a lambda expression node, e.g.: 'x->x*x'
 type Lambda struct {
-	Args  []*Ident
-	Body  Node
-	scope *Scope
+	Args     []*Ident
+	CapArgs  []*Ident
+	Captured []Var
+	Body     Node
+	//scope *Scope
 }
 
 func (n *Lambda) PrintTo(w io.Writer) {
@@ -80,4 +78,17 @@ func ToString(e Node) string {
 	var buf bytes.Buffer
 	e.PrintTo(&buf)
 	return buf.String()
+}
+
+func children(n Node) []Node {
+	switch n := n.(type) {
+	default:
+		panic(unhandled(n))
+	case *Num, *Ident:
+		return nil
+	case *Call:
+		return append([]Node{n.F}, n.Args...)
+	case *Lambda:
+		return []Node{n.Body}
+	}
 }

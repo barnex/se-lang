@@ -10,6 +10,7 @@ func TestResolve(t *testing.T) {
 		src string
 	}{
 		{`1`},
+		{`x->x`},
 		{`1+1`},
 		{`1+2+3+4`},
 		{`(1+2)+(3+4)`},
@@ -29,5 +30,33 @@ func TestResolve(t *testing.T) {
 			t.Fatalf("%v: have %v, %v", c.src, ast, err)
 		}
 		Resolve(ast)
+	}
+}
+
+func TestResolveUndefined(t *testing.T) {
+	cases := []struct {
+		src string
+	}{
+		{`x`},
+		{`x->y`},
+	}
+
+	for _, c := range cases {
+		ast, err := Parse(strings.NewReader(c.src))
+		if err != nil || ast == nil {
+			t.Fatalf("%v: have %v, %v", c.src, ast, err)
+		}
+		func() {
+			defer func() {
+				switch e := recover().(type) {
+				case nil:
+					t.Errorf("expected undefined")
+				default:
+					panic(e) // re-throw
+				case *SyntaxError: // ok
+				}
+			}()
+			Resolve(ast)
+		}()
 	}
 }

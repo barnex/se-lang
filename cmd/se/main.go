@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/barnex/se-lang"
+	"github.com/davecgh/go-spew/spew"
 )
 
 func main() {
@@ -24,6 +25,15 @@ func main() {
 		}
 		se.Resolve(expr)
 		fmt.Println(se.ToString(expr))
+		fmt.Println()
+		cfg := spew.ConfigState{
+			DisableCapacities:       true,
+			DisablePointerAddresses: true,
+			Indent:                  "  ",
+			SortKeys:                true,
+		}
+		cfg.Dump(expr)
+
 		//prog, err := se.Compile(bytes.NewReader(src))
 		//if err != nil {
 		//	fmt.Println(err)
