@@ -29,6 +29,9 @@ type Ident struct {
 
 func (n *Ident) PrintTo(w io.Writer) {
 	fmt.Fprint(w, n.Name)
+	if n.Var != nil {
+		fmt.Fprint(w, ":", n.Var)
+	}
 }
 
 // Call is a function call Node, e.g.: 'sqrt(2)'
@@ -53,6 +56,18 @@ type Lambda struct {
 func (n *Lambda) PrintTo(w io.Writer) {
 	fmt.Fprint(w, "(")
 	printList(w, n.Args)
+
+	if len(n.Cap) > 0 {
+		fmt.Fprint(w, "[")
+		for i, c := range n.Cap {
+			if i != 0 {
+				fmt.Fprint(w, ",")
+			}
+			fmt.Fprint(w, c, " ")
+		}
+		fmt.Fprint(w, "]")
+	}
+
 	fmt.Fprint(w, TLambda)
 	n.Body.PrintTo(w)
 	fmt.Fprint(w, ")")

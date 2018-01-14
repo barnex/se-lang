@@ -1,6 +1,8 @@
 package se
 
-import "log"
+import (
+	"fmt"
+)
 
 func Resolve(n Node) {
 	resolve(Frames{prelude}, n)
@@ -20,6 +22,46 @@ func resolve(s Frames, n Node) {
 		panic(unhandled(n))
 	}
 }
+
+// Var refers to the storage location of a variable,
+// so we can set or retreive the its value.
+type Var interface {
+	variable()
+}
+
+var (
+	_ Var = (*CaptVar)(nil)
+	_ Var = (*GlobVar)(nil)
+	_ Var = (*LocalVar)(nil)
+)
+
+// A CaptVar refers to a captured variable:
+// a variable closed over by a closure.
+type CaptVar struct {
+	Name   string
+	ParVar *LocalVar // variable being captured from the parent frame
+	Local  *LocalVar // local variable being captured to
+}
+
+func (c *CaptVar) variable()      {}
+func (c *CaptVar) String() string { return fmt.Sprintf("[%v=p.%v]", c.Local, c.ParVar) }
+
+// A GlobVar refers to a global variabe:
+// a variable with a constant address.
+type GlobVar struct {
+	Name string
+}
+
+func (l *GlobVar) variable() {}
+
+// A LocalVar refers to a local variable:
+// a variable that exist on a call stack (argument or local define)
+type LocalVar struct {
+	Index int
+}
+
+func (l *LocalVar) variable()      {}
+func (l *LocalVar) String() string { return fmt.Sprint("$", l.Index) }
 
 func resolveIdent(s Frames, id *Ident) {
 
@@ -41,7 +83,8 @@ func resolveIdent(s Frames, id *Ident) {
 	case defScope == s[0]: // global variable
 		// TODO
 	default: // captured variable
-		v := usingScope.(*Lambda).DoCapture(id.Name, v.(*LocalVar)) // only locals can be captured
+		// TODO: loop over frames, capture from defscope+1 to last, capture all the way
+		v := usingScope.(*Lambda).DoCapture(id.Name, v.(*LocalVar)).Local // only locals can be captured
 		id.Var = v
 	}
 }
@@ -67,21 +110,21 @@ func (n *Lambda) Find(name string) Var {
 	}
 	for _, a := range n.Cap {
 		if name == a.Name {
-			return a.LocalVar // ?
+			return a.Local // ?
 		}
 	}
 	return nil
 }
 
 func (n *Lambda) DoCapture(name string, v *LocalVar) (local *CaptVar) {
-	log.Printf("docapture %q %#v", name, v)
+	//log.Printf("docapture %q %#v", name, v)
 	if v := n.Find(name); v != nil {
 		return v.(*CaptVar) // already captured
 	}
 	c := &CaptVar{
-		Name:     name,
-		ParVar:   v,
-		LocalVar: &LocalVar{Index: n.NumLocals()},
+		Name:   name,
+		ParVar: v,
+		Local:  &LocalVar{Index: n.NumLocals()},
 	}
 	n.Cap = append(n.Cap, c)
 	return c
@@ -112,7 +155,7 @@ func (s *Frames) Last() Frame {
 }
 
 func (f *Frames) Find(name string) (v_ Var, _ Frame) {
-	defer func() { log.Printf("find %q: %#v", name, v_) }()
+	//defer func() { log.Printf("find %q: %#v", name, v_) }()
 	s := *f
 	for i := len(s) - 1; i >= 0; i-- {
 		s := s[i]
@@ -122,41 +165,3 @@ func (f *Frames) Find(name string) (v_ Var, _ Frame) {
 	}
 	return nil, nil
 }
-
-// gather records in s all definitions
-// in the AST rooted at n.
-//func gather(n Node) {
-//	switch n := n.(type) {
-//	default:
-//		panic(unhandled(n))
-//	case *Num, *Ident, *Call:
-//		for _, n := range n.Args {
-//			gather(n)
-//		}
-//	case *Lambda:
-//		for _, id := range n.Args {
-//			s.Def(id.Name, id)
-//		}
-//		gatherDefs(s, n.Body)
-//	}
-//}
-
-//func resolve(s *Scope, n Node) {
-//	switch n := n.(type) {
-//	default:
-//		panic(unhandled(n))
-//	case *Num:
-//	case *Ident:
-//		if def := s.Resolve(n.Name); def != nil {
-//			n.ID = def.ID
-//		}
-//	case *Call:
-//		resolve(s, n.F)
-//		for _, n := range n.Args {
-//			resolve(s, n)
-//		}
-//	case *Lambda:
-//		s = n.scope
-//		resolve(s, n.Body)
-//	}
-//}
