@@ -3,7 +3,7 @@ package se
 // Var refers to the storage location of a variable,
 // so we can set or retreive the its value.
 type Var interface {
-	Get() Value
+	variable()
 }
 
 var (
@@ -26,9 +26,7 @@ type GlobVar struct {
 	Name string
 }
 
-func (l *GlobVar) Get() Value {
-	panic("todo")
-}
+func (l *GlobVar) variable() {}
 
 // A LocalVar refers to a local variable:
 // a variable that exist on a call stack (argument or local define)
@@ -36,6 +34,4 @@ type LocalVar struct {
 	Index int
 }
 
-func (l *LocalVar) Get() Value {
-	panic("todo")
-}
+func (l *LocalVar) variable() {}
