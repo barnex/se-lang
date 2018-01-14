@@ -71,20 +71,25 @@ func resolveIdent(s Frames, id *Ident) {
 	// 		y ->
 	//  		x + y  // usingScope of x
 
-	v, defScope := s.Find(id.Name)
+	name := id.Name
+	v, defScope := s.Find(name)
 	if v == nil {
-		panic(SyntaxErrorf("undefined: %v", id.Name))
+		panic(SyntaxErrorf("undefined: %v", name))
 	}
-	usingScope := s.Last()
+	//usingScope := s.Last()
 
 	switch {
-	case defScope == usingScope: // local variable
+	case defScope == len(s)-1: // local variable
 		id.Var = v
-	case defScope == s[0]: // global variable
+	case defScope == 0: // global variable
 		// TODO
 	default: // captured variable
-		// TODO: loop over frames, capture from defscope+1 to last, capture all the way
-		v := usingScope.(*Lambda).DoCapture(id.Name, v.(*LocalVar)).Local // only locals can be captured
+		// loop over frames, capture from defscope+1 to last, capture all the way
+		for i := defScope + 1; i < len(s); i++ {
+			v := s[i-1].Find(name)
+			s[i].(*Lambda).DoCapture(name, v.(*LocalVar)) // only locals can be captured
+		}
+		v := s[len(s)-1].Find(name)
 		id.Var = v
 	}
 }
@@ -154,14 +159,13 @@ func (s *Frames) Last() Frame {
 	return (*s)[len(*s)-1]
 }
 
-func (f *Frames) Find(name string) (v_ Var, _ Frame) {
+func (f *Frames) Find(name string) (Var, int) {
 	//defer func() { log.Printf("find %q: %#v", name, v_) }()
 	s := *f
 	for i := len(s) - 1; i >= 0; i-- {
-		s := s[i]
-		if v := s.Find(name); v != nil {
-			return v, s
+		if v := s[i].Find(name); v != nil {
+			return v, i
 		}
 	}
-	return nil, nil
+	return nil, 0
 }
