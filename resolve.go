@@ -1,6 +1,6 @@
 package se
 
-import "fmt"
+import "log"
 
 func Resolve(n Node) {
 	resolve(Frames{prelude}, n)
@@ -21,54 +21,74 @@ func resolve(s Frames, n Node) {
 	}
 }
 
+func resolveIdent(s Frames, id *Ident) {
+
+	// defScope: where ident was defined
+	// usingScope: where ident is being used:
+	// 	x ->           // defScope of x
+	// 		y ->
+	//  		x + y  // usingScope of x
+
+	v, defScope := s.Find(id.Name)
+	if v == nil {
+		panic(SyntaxErrorf("undefined: %v", id.Name))
+	}
+	usingScope := s.Last()
+
+	switch {
+	case defScope == usingScope: // local variable
+		id.Var = v
+	case defScope == s[0]: // global variable
+		// TODO
+	default: // captured variable
+		v := usingScope.(*Lambda).DoCapture(id.Name, v.(*Local)) // only locals can be captured
+		id.Var = v
+	}
+}
+
 func resolveLambda(s Frames, n *Lambda) {
 	// first define the arguments
 	for i, a := range n.Args {
-		a.Var = Local{i}
+		a.Var = &Local{i}
 	}
+
 	// then resolve the body
 	s.Push(n)
 	resolve(s, n.Body)
 	s.Pop()
 }
 
-func resolveIdent(s Frames, id *Ident) {
-	v, defScope := s.Find(id.Name)
-	if v == nil {
-		panic(SyntaxErrorf("undefined: %v", id.Name))
-	}
-	usingScope := s.Last()
-	if defScope == usingScope {
-		// local variable
-		id.Var = v
-	} else {
-		// captured variable (TODO: or global).
-		fmt.Println("capture", id.Name)
-		usingScope.(*Lambda).DoCapture(id.Name, v)
-		id.Var = usingScope.Find(id.Name)
-	}
-}
-
 func (n *Lambda) Find(name string) Var {
 	for _, a := range n.Args {
 		assert(a.Var != nil)
 		if name == a.Name {
-			return a
+			return a.Var
 		}
 	}
-	for _, a := range n.CapArgs {
-		assert(a.Var != nil)
+	for _, a := range n.Cap {
 		if name == a.Name {
-			return a
+			return a.LocVar // ?
 		}
 	}
 	return nil
 }
 
-func (n *Lambda) DoCapture(name string, v Var) {
-	index := len(n.Args) + len(n.CapArgs)
-	n.CapArgs = append(n.Args, &Ident{name, Local{index}})
-	n.Captured = append(n.Captured, v)
+func (n *Lambda) DoCapture(name string, v *Local) (local *Capture) {
+	log.Printf("docapture %q %#v", name, v)
+	if v := n.Find(name); v != nil {
+		return v.(*Capture) // already captured
+	}
+	c := &Capture{
+		Name:   name,
+		ParVar: v,
+		LocVar: &Local{Index: n.NumLocals()},
+	}
+	n.Cap = append(n.Cap, c)
+	return c
+}
+
+func (n *Lambda) NumLocals() int {
+	return len(n.Args) + len(n.Cap)
 }
 
 type Frame interface {
@@ -91,7 +111,8 @@ func (s *Frames) Last() Frame {
 	return (*s)[len(*s)-1]
 }
 
-func (f *Frames) Find(name string) (Var, Frame) {
+func (f *Frames) Find(name string) (v_ Var, _ Frame) {
+	defer func() { log.Printf("find %q: %#v", name, v_) }()
 	s := *f
 	for i := len(s) - 1; i >= 0; i-- {
 		s := s[i]

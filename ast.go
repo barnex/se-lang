@@ -44,11 +44,20 @@ func (n *Call) PrintTo(w io.Writer) {
 
 // Lambda is a lambda expression node, e.g.: 'x->x*x'
 type Lambda struct {
-	Args     []*Ident
-	CapArgs  []*Ident
-	Captured []Var
-	Body     Node
+	Args []*Ident
+	Cap  []*Capture
+	Body Node
 	//scope *Scope
+}
+
+type Capture struct {
+	Name   string
+	ParVar *Local // variable being captured from the parent frame
+	LocVar *Local // local variable being captured to
+}
+
+func (c *Capture) Get() Value {
+	return c.LocVar.Get()
 }
 
 func (n *Lambda) PrintTo(w io.Writer) {
