@@ -41,7 +41,7 @@ func resolveIdent(s Frames, id *Ident) {
 	case defScope == s[0]: // global variable
 		// TODO
 	default: // captured variable
-		v := usingScope.(*Lambda).DoCapture(id.Name, v.(*Local)) // only locals can be captured
+		v := usingScope.(*Lambda).DoCapture(id.Name, v.(*LocalVar)) // only locals can be captured
 		id.Var = v
 	}
 }
@@ -49,7 +49,7 @@ func resolveIdent(s Frames, id *Ident) {
 func resolveLambda(s Frames, n *Lambda) {
 	// first define the arguments
 	for i, a := range n.Args {
-		a.Var = &Local{i}
+		a.Var = &LocalVar{i}
 	}
 
 	// then resolve the body
@@ -67,21 +67,21 @@ func (n *Lambda) Find(name string) Var {
 	}
 	for _, a := range n.Cap {
 		if name == a.Name {
-			return a.LocVar // ?
+			return a.LocalVar // ?
 		}
 	}
 	return nil
 }
 
-func (n *Lambda) DoCapture(name string, v *Local) (local *Capture) {
+func (n *Lambda) DoCapture(name string, v *LocalVar) (local *CaptVar) {
 	log.Printf("docapture %q %#v", name, v)
 	if v := n.Find(name); v != nil {
-		return v.(*Capture) // already captured
+		return v.(*CaptVar) // already captured
 	}
-	c := &Capture{
-		Name:   name,
-		ParVar: v,
-		LocVar: &Local{Index: n.NumLocals()},
+	c := &CaptVar{
+		Name:     name,
+		ParVar:   v,
+		LocalVar: &LocalVar{Index: n.NumLocals()},
 	}
 	n.Cap = append(n.Cap, c)
 	return c

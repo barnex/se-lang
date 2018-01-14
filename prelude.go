@@ -1,12 +1,12 @@
 package se
 
-var prelude = &globals{map[string]*Global{
-	"add": &Global{"add"},
-	"mul": &Global{"mul"},
+var prelude = &globals{map[string]*GlobVar{
+	"add": &GlobVar{"add"},
+	"mul": &GlobVar{"mul"},
 }}
 
 type globals struct {
-	m map[string]*Global
+	m map[string]*GlobVar
 }
 
 func (g *globals) Find(name string) Var {
