@@ -2,6 +2,8 @@ package se
 
 import (
 	"fmt"
+
+	se "github.com/barnex/se-lang"
 )
 
 func Resolve(n Node) {
@@ -74,7 +76,7 @@ func resolveIdent(s Frames, id *Ident) {
 	name := id.Name
 	v, defScope := s.Find(name)
 	if v == nil {
-		panic(SyntaxErrorf("undefined: %v", name))
+		panic(se.Errorf("undefined: %v", name))
 	}
 	//usingScope := s.Last()
 

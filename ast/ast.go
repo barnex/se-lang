@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+
+	"github.com/barnex/se-lang/lex"
 )
 
 // A Node is an element of an AST (Abstract Syntax Tree).
@@ -68,7 +70,7 @@ func (n *Lambda) PrintTo(w io.Writer) {
 		fmt.Fprint(w, "]")
 	}
 
-	fmt.Fprint(w, TLambda)
+	fmt.Fprint(w, lex.TLambda)
 	n.Body.PrintTo(w)
 	fmt.Fprint(w, ")")
 }

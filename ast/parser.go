@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+
+	se "github.com/barnex/se-lang"
+	"github.com/barnex/se-lang/lex"
 )
 
 func Parse(src io.Reader) (Node, error) {
@@ -11,21 +14,21 @@ func Parse(src io.Reader) (Node, error) {
 }
 
 type Parser struct {
-	lex  Lexer
-	next [readAhead]Token
+	lex  lex.Lexer
+	next [readAhead]lex.Token
 }
 
 const readAhead = 4
 
 func NewParser(src io.Reader) *Parser {
-	return &Parser{lex: *NewLexer(src)}
+	return &Parser{lex: *lex.NewLexer(src)}
 }
 
 func (p *Parser) Parse() (_ Node, e error) {
 	return withCatch(func() Node {
 		p.init()
 		program := p.PExpr()
-		p.Expect(TEOF)
+		p.Expect(lex.TEOF)
 		return program
 	})
 }
@@ -42,7 +45,7 @@ func withCatch(f func() Node) (_ Node, e error) {
 				panic(err) // resume
 			case nil:
 				// no error
-			case *SyntaxError:
+			case se.Error:
 				e = err
 			}
 		}()
@@ -57,10 +60,10 @@ func withCatch(f func() Node) (_ Node, e error) {
 //  | lambda
 func (p *Parser) PExpr() Node {
 	// peek for lambda: "()" or "(ident," or "ident->" or "(ident)->"
-	if p.HasPeek(TLParen, TRParen) ||
-		p.HasPeek(TLParen, TIdent, TComma) ||
-		p.HasPeek(TIdent, TLambda) ||
-		p.HasPeek(TLParen, TIdent, TRParen, TLambda) {
+	if p.HasPeek(lex.TLParen, lex.TRParen) ||
+		p.HasPeek(lex.TLParen, lex.TIdent, lex.TComma) ||
+		p.HasPeek(lex.TIdent, lex.TLambda) ||
+		p.HasPeek(lex.TLParen, lex.TIdent, lex.TRParen, lex.TLambda) {
 		return p.PLambda()
 	} else {
 		return p.PExpr1()
@@ -76,13 +79,13 @@ func (p *Parser) PLambda() Node {
 	var args []*Ident
 
 	// ident -> expr
-	if p.HasPeek(TIdent) {
+	if p.HasPeek(lex.TIdent) {
 		args = []*Ident{p.PIdent()}
 	} else {
 		args = p.PIdentList()
 	}
 
-	p.Expect(TLambda)
+	p.Expect(lex.TLambda)
 
 	body := p.PExpr()
 	return &Lambda{Args: args, Body: body}
@@ -92,20 +95,20 @@ func (p *Parser) PLambda() Node {
 //  | ()
 //  | (ident,...)
 func (p *Parser) PIdentList() []*Ident {
-	p.Expect(TLParen)
+	p.Expect(lex.TLParen)
 	var l []*Ident
 
 	//()
-	if p.Accept(TRParen) {
+	if p.Accept(lex.TRParen) {
 		return l
 	}
 
 	//(ident,...)
 	l = append(l, p.PIdent())
-	for p.Accept(TComma) {
+	for p.Accept(lex.TComma) {
 		l = append(l, p.PIdent())
 	}
-	p.Expect(TRParen)
+	p.Expect(lex.TRParen)
 	return l
 }
 
@@ -131,21 +134,21 @@ func (p *Parser) PBinary(prec1 int) Node {
 	return lhs
 }
 
-func opFunc(t TType) string {
+func opFunc(t lex.TType) string {
 	if f, ok := opfunc[t]; ok {
 		return f
 	}
 	panic(fmt.Sprintf("bug: bad operator: %v", t))
 }
 
-var opfunc = map[TType]string{
-	TAdd: "add",
-	TMul: "mul",
+var opfunc = map[lex.TType]string{
+	lex.TAdd: "add",
+	lex.TMul: "mul",
 }
 
-var isUnary = map[TType]bool{
-	TAdd:   true,
-	TMinus: true,
+var isUnary = map[lex.TType]bool{
+	lex.TAdd:   true,
+	lex.TMinus: true,
 }
 
 // parse an operand:
@@ -158,25 +161,25 @@ var isUnary = map[TType]bool{
 func (p *Parser) POperand() Node {
 
 	// - operand
-	if p.Accept(TMinus) {
+	if p.Accept(lex.TMinus) {
 		return &Call{&Ident{Name: "neg"}, []Node{p.POperand()}}
 	}
 
 	// num, ident, parenexpr
 	var expr Node
 	switch p.PeekTT() {
-	case TNum:
+	case lex.TNum:
 		expr = p.PNum()
-	case TIdent:
+	case lex.TIdent:
 		expr = p.PIdent()
-	case TLParen:
+	case lex.TLParen:
 		expr = p.PParenExpr()
 	default:
 		panic(p.Unexpected(p.Next()))
 	}
 
 	// operand *(list): function call
-	for p.PeekTT() == TLParen {
+	for p.PeekTT() == lex.TLParen {
 		args := p.PArgList()
 		expr = &Call{expr, args}
 	}
@@ -186,7 +189,7 @@ func (p *Parser) POperand() Node {
 
 // parse a number.
 func (p *Parser) PNum() Node {
-	tok := p.Expect(TNum)
+	tok := p.Expect(lex.TNum)
 	v, err := strconv.ParseFloat(tok.Value, 64)
 	if err != nil {
 		panic(p.SyntaxError(err.Error()))
@@ -196,7 +199,7 @@ func (p *Parser) PNum() Node {
 
 // parse an identifier
 func (p *Parser) PIdent() *Ident {
-	tok := p.Expect(TIdent)
+	tok := p.Expect(lex.TIdent)
 	return &Ident{Name: tok.Value}
 }
 
@@ -205,47 +208,47 @@ func (p *Parser) PIdent() *Ident {
 //   | ()
 //   | ( expr1, expr1, ... )
 func (p *Parser) PArgList() []Node {
-	p.Expect(TLParen)
+	p.Expect(lex.TLParen)
 
 	// ()
-	if p.Accept(TRParen) {
+	if p.Accept(lex.TRParen) {
 		return []Node{}
 	}
 
 	// ( expr1, expr1, ... )
 	list := []Node{p.PExpr1()}
-	for p.Accept(TComma) {
+	for p.Accept(lex.TComma) {
 		list = append(list, p.PExpr1())
 	}
-	p.Expect(TRParen)
+	p.Expect(lex.TRParen)
 	return list
 }
 
 func (p *Parser) PParenExpr() Node {
-	p.Expect(TLParen)
+	p.Expect(lex.TLParen)
 	//if p.Accept(TRParen) {
 	//	return List{}
 	//}
 	expr := p.PExpr()
-	p.Expect(TRParen)
+	p.Expect(lex.TRParen)
 	return expr
 }
 
 // ------------------------------------------
 
-var precedence = map[TType]int{
-	TAdd:   1,
-	TMinus: 1,
-	TMul:   2,
-	TDiv:   2,
+var precedence = map[lex.TType]int{
+	lex.TAdd:   1,
+	lex.TMinus: 1,
+	lex.TMul:   2,
+	lex.TDiv:   2,
 }
 
 // Peek returns the next token in the stream without advancing
-func (p *Parser) Peek() Token {
+func (p *Parser) Peek() lex.Token {
 	return p.next[0]
 }
 
-func (p *Parser) HasPeek(want ...TType) bool {
+func (p *Parser) HasPeek(want ...lex.TType) bool {
 	for i, w := range want {
 		if p.next[i].TType != w {
 			return false
@@ -254,12 +257,12 @@ func (p *Parser) HasPeek(want ...TType) bool {
 	return true
 }
 
-func (p *Parser) PeekTT() TType {
+func (p *Parser) PeekTT() lex.TType {
 	return p.Peek().TType
 }
 
 // Next returns the next token in the stream and advances
-func (p *Parser) Next() Token {
+func (p *Parser) Next() lex.Token {
 	curr := p.next[0]
 
 	for i := 0; i < readAhead-1; i++ {
@@ -270,7 +273,7 @@ func (p *Parser) Next() Token {
 }
 
 // if the peeked token is of type t, consume the token and return true.
-func (p *Parser) Accept(t TType) bool {
+func (p *Parser) Accept(t lex.TType) bool {
 	if p.Peek().TType == t {
 		p.Next()
 		return true
@@ -279,7 +282,7 @@ func (p *Parser) Accept(t TType) bool {
 }
 
 // consume the next token and throw an error if it is not of the expected type.
-func (p *Parser) Expect(t TType) Token {
+func (p *Parser) Expect(t lex.TType) lex.Token {
 	if n := p.Next(); n.TType != t {
 		panic(p.SyntaxError(fmt.Sprintf("unexpected '%v', expected '%v'", n, t)))
 	} else {
@@ -288,22 +291,22 @@ func (p *Parser) Expect(t TType) Token {
 }
 
 // construct a syntax error for unexpected token at current position.
-func (p *Parser) Unexpected(t Token) *SyntaxError {
+func (p *Parser) Unexpected(t lex.Token) se.Error {
 	return p.SyntaxError(fmt.Sprintf("unexpected '%v'", t))
 }
 
 // construct a syntax error at current position.
-func (p *Parser) SyntaxError(msg string) *SyntaxError {
-	return &SyntaxError{Msg: msg, Position: p.nextPos()}
+func (p *Parser) SyntaxError(msg string) se.Error {
+	return se.Errorf("line %v: %v", p.nextPos(), msg)
 }
 
-func (p *Parser) nextPos() Position {
+func (p *Parser) nextPos() se.Position {
 	// TODO: return p.Peek().Pos
-	return Position{}
+	return se.Position{}
 }
 
 func (p *Parser) init() {
-	if p.next[0] != (Token{}) {
+	if p.next[0] != (lex.Token{}) {
 		panic("parser: init called twice")
 	}
 	for i := 0; i < readAhead; i++ {

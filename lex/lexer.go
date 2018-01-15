@@ -1,8 +1,10 @@
-package se
+package lex
 
 import (
 	"io"
 	"text/scanner"
+
+	se "github.com/barnex/se-lang"
 )
 
 type Lexer struct {
@@ -13,10 +15,7 @@ func NewLexer(src io.Reader) *Lexer {
 	l := new(Lexer)
 	l.s.Init(src)
 	l.s.Error = func(s *scanner.Scanner, msg string) {
-		panic(&SyntaxError{
-			Msg:      msg,
-			Position: Position{s.Position},
-		})
+		panic(se.Error{msg})
 	}
 	l.s.Mode = scanner.ScanIdents |
 		scanner.ScanInts |
@@ -104,14 +103,11 @@ func (l *Lexer) Next() Token {
 	panic(l.syntaxError("unexpected: " + scanner.TokenString(tok)))
 }
 
-func (l *Lexer) Position() Position {
-	return Position{l.s.Position}
+func (l *Lexer) Position() se.Position {
+	return se.Position{l.s.Position}
 }
 
 // returns a syntax error for the current position
-func (l *Lexer) syntaxError(msg string) *SyntaxError {
-	return &SyntaxError{
-		Msg:      msg,
-		Position: Position{l.s.Position},
-	}
+func (l *Lexer) syntaxError(msg string) error {
+	return se.Errorf("line %v: %v", l.s.Position.Line, msg)
 }

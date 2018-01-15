@@ -1,4 +1,4 @@
-package se
+package lex
 
 import (
 	"fmt"

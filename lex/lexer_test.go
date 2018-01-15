@@ -1,9 +1,11 @@
-package se
+package lex
 
 import (
 	"reflect"
 	"strings"
 	"testing"
+
+	se "github.com/barnex/se-lang"
 )
 
 func TestLex(t *testing.T) {
@@ -82,7 +84,7 @@ func lexAll(input string) (t []Token, e error) {
 			panic(err) // resume
 		case nil:
 			// no error
-		case *SyntaxError:
+		case se.Error:
 			t = nil
 			e = err
 		}
