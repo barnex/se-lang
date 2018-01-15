@@ -26,14 +26,10 @@ func (n *Num) PrintTo(w io.Writer) {
 // Ident is an identifier Node, e.g.: 'sqrt'
 type Ident struct {
 	Name string
-	Var  Var
 }
 
 func (n *Ident) PrintTo(w io.Writer) {
 	fmt.Fprint(w, n.Name)
-	if n.Var != nil {
-		fmt.Fprint(w, ":", n.Var)
-	}
 }
 
 // Call is a function call Node, e.g.: 'sqrt(2)'
@@ -50,25 +46,23 @@ func (n *Call) PrintTo(w io.Writer) {
 // Lambda is a lambda expression node, e.g.: 'x->x*x'
 type Lambda struct {
 	Args []*Ident
-	Cap  []*CaptVar
 	Body Node
-	//scope *Scope
 }
 
 func (n *Lambda) PrintTo(w io.Writer) {
 	fmt.Fprint(w, "(")
 	printList(w, n.Args)
 
-	if len(n.Cap) > 0 {
-		fmt.Fprint(w, "[")
-		for i, c := range n.Cap {
-			if i != 0 {
-				fmt.Fprint(w, ",")
-			}
-			fmt.Fprint(w, c, " ")
-		}
-		fmt.Fprint(w, "]")
-	}
+	//if len(n.Cap) > 0 {
+	//	fmt.Fprint(w, "[")
+	//	for i, c := range n.Cap {
+	//		if i != 0 {
+	//			fmt.Fprint(w, ",")
+	//		}
+	//		fmt.Fprint(w, c, " ")
+	//	}
+	//	fmt.Fprint(w, "]")
+	//}
 
 	fmt.Fprint(w, lex.TLambda)
 	n.Body.PrintTo(w)

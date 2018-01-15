@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/barnex/se-lang"
+	"github.com/barnex/se-lang/ast"
 )
 
 func main() {
@@ -17,14 +17,13 @@ func main() {
 		if err != nil {
 			return // EOF
 		}
-		expr, err := se.Parse(bytes.NewReader(src))
+		expr, err := ast.Parse(bytes.NewReader(src))
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		se.Resolve(expr)
 
-		fmt.Println(se.ToString(expr))
+		fmt.Println(ast.ToString(expr))
 
 		//fmt.Println(se.ToString(expr))
 		//fmt.Println()

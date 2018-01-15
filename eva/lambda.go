@@ -1,13 +1,15 @@
-package se
+package eva
 
-func compileLambda(n *Lambda) Prog {
+import "github.com/barnex/se-lang/ast"
+
+func compileLambda(n *ast.Lambda) Prog {
 	panic("todo")
 }
 
-type PLambda struct {
+type Lambda struct {
 }
 
-func (n *PLambda) Eval() Value {
+func (n *Lambda) Eval() Value {
 	panic("todo")
 }
 

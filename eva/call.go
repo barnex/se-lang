@@ -1,6 +1,8 @@
-package se
+package eva
 
-func compileCall(n *Call) Prog {
+import "github.com/barnex/se-lang/ast"
+
+func compileCall(n *ast.Call) Prog {
 	args := make([]Prog, len(n.Args))
 	for i, a := range n.Args {
 		args[i] = compileExpr(a)

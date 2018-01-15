@@ -6,9 +6,9 @@ The real functionality is implemented in these packages:
 	lex: Lexical scanner for SE source text.
 	ast: Parser and Abstract Syntax Tree
 	typ: Typechekcer
-	iir:  Intermediate Representation & interpreter
-	sec: Compiler
-
+	std: Standard library
+	eva: Intermediate Representation & evaluator
+	jit: Just-In-Time compiler
 */
 package se
 
