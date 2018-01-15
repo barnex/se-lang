@@ -1,4 +1,4 @@
-package se
+package ast
 
 var prelude = &globals{map[string]*GlobVar{
 	"add": &GlobVar{"add"},

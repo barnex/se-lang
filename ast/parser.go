@@ -1,4 +1,4 @@
-package se
+package ast
 
 import (
 	"fmt"
@@ -9,8 +9,18 @@ import (
 	"github.com/barnex/se-lang/lex"
 )
 
-func Parse(src io.Reader) (Node, error) {
-	return NewParser(src).Parse()
+func Parse(src io.Reader) (_ Node, e error) {
+	defer func() {
+		switch err := recover().(type) {
+		default:
+			panic(err) // resume
+		case nil:
+			// no error
+		case se.Error:
+			e = err
+		}
+	}()
+	return NewParser(src).Parse(), nil
 }
 
 type Parser struct {
@@ -24,32 +34,17 @@ func NewParser(src io.Reader) *Parser {
 	return &Parser{lex: *lex.NewLexer(src)}
 }
 
-func (p *Parser) Parse() (_ Node, e error) {
-	return withCatch(func() Node {
-		p.init()
-		program := p.PExpr()
-		p.Expect(lex.TEOF)
-		return program
-	})
+func (p *Parser) Parse() Node {
+	p.init()
+	program := p.PExpr()
+	p.Expect(lex.TEOF)
+	return program
 }
 
 // debug: panic on parse error
 const panicOnErr = false
 
 func withCatch(f func() Node) (_ Node, e error) {
-	// catch syntax errors
-	if !panicOnErr {
-		defer func() {
-			switch err := recover().(type) {
-			default:
-				panic(err) // resume
-			case nil:
-				// no error
-			case se.Error:
-				e = err
-			}
-		}()
-	}
 	return f(), nil
 }
 

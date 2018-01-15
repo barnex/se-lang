@@ -1,8 +1,10 @@
-package se
+package ast
 
 import (
 	"strings"
 	"testing"
+
+	se "github.com/barnex/se-lang"
 )
 
 func TestResolve(t *testing.T) {
@@ -53,7 +55,7 @@ func TestResolveUndefined(t *testing.T) {
 					t.Errorf("expected undefined")
 				default:
 					panic(e) // re-throw
-				case *SyntaxError: // ok
+				case se.Error: // ok
 				}
 			}()
 			Resolve(ast)
