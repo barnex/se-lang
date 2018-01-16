@@ -3,27 +3,27 @@ package eva
 import "github.com/barnex/se-lang/ast"
 
 func compileCall(n *ast.Call) Prog {
+	f := compileExpr(n.F)
 	args := make([]Prog, len(n.Args))
 	for i, a := range n.Args {
 		args[i] = compileExpr(a)
 	}
-	f := compileExpr(n.F) // todo message
-	return &PCall{f, args}
+	return &Call{f, args}
 }
 
-type PCall struct {
+type Call struct {
 	F    Prog
 	Args []Prog
 }
 
-func (n *PCall) Eval() Value {
-	args := make([]Value, len(n.Args))
-	for i, a := range n.Args {
-		args[i] = a.Eval()
+func (n *Call) Eval(s *Stack) {
+	for _, a := range n.Args {
+		a.Eval(s)
 	}
-	return n.F.Eval().(Applier).Apply(args)
+	n.F.Eval(s)
+	s.Pop().(Applier).Apply(s)
 }
 
 type Applier interface {
-	Apply([]Value) Value
+	Apply(s *Stack)
 }

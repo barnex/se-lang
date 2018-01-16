@@ -10,8 +10,8 @@ func TestEval(t *testing.T) {
 		src  string
 		want interface{}
 	}{
-		{`1`, 1.0},
-		//{`1+1`, 2.0},
+		//{`1`, 1.0},
+		{`1+2`, 3.0},
 		//{`1+2+3+4`, 10.0},
 		//{`(1+2)+(3+4)`, 10.0},
 		//{`1*2*3*4`, 24.0},
@@ -31,8 +31,8 @@ func TestEval(t *testing.T) {
 		if err != nil || prog == nil {
 			t.Fatalf("%v: have %v, %v", c.src, prog, err)
 		}
-		if have := prog.Eval(); have != c.want {
-			t.Errorf("%v: have %v, want: %v", c.src, have, c.want)
+		if have, err := Eval(prog); err != nil || have != c.want {
+			t.Errorf("%v: have %v, %v, want: %v", c.src, have, err, c.want)
 		}
 	}
 }

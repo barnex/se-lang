@@ -1,51 +1,33 @@
 package eva
 
-type stack []interface{}
+import "fmt"
 
-func (s *stack) Push(v interface{}) {
+type Stack []Value
+
+func (s *Stack) Len() int {
+	return len(*s)
+}
+
+func (s *Stack) Push(v Value) {
+	fmt.Println("->push:", v)
 	*s = append(*s, v)
 }
 
-func (s *stack) Pop() interface{} {
-	v := (*s)[len(*s)-1]
-	*s = (*s)[:len(*s)-1]
+func (s *Stack) Pop() Value {
+	v := s.FromTop(-1)
+	s.Grow(-1)
+	fmt.Println("<-pop :", v)
 	return v
 }
 
-//type Stack struct {
-//	ID    int
-//	stack []Value
-//}
-//
-//var stackID int
-//
-//func NewStack() *Stack {
-//	stackID++
-//	return &Stack{stackID, nil}
-//}
-//
-//func (s *Stack) Push(v Value) {
-//	s.stack = append(s.stack, v)
-//}
-//
-//func (s *Stack) Pop() Value {
-//	v := s.stack[len(s.stack)-1]
-//	s.AddStack(-1)
-//	return v
-//}
-//
-//func (s *Stack) Eval() Value {
-//	return s.stack[len(s.stack)-1]
-//}
-//
-//func (s *Stack) PrintTo(w io.Writer) {
-//	fmt.Fprint(w, ":", s.ID)
-//}
-//
-//func (s *Stack) AddStack(delta int) {
-//	new := len(s.stack) + delta
-//	if new > cap(s.stack) {
-//		s.stack = append(s.stack, make([]Value, new-cap(s.stack))...)
-//	}
-//	s.stack = s.stack[:new]
-//}
+func (s *Stack) FromTop(delta int) Value {
+	return (*s)[s.Len()+delta]
+}
+
+func (s *Stack) Grow(delta int) {
+	new := len(*s) + delta
+	if new > cap(*s) {
+		*s = append(*s, make([]Value, new-cap(*s))...)
+	}
+	*s = (*s)[:new]
+}

@@ -4,40 +4,54 @@ import (
 	"fmt"
 	"io"
 
+	se "github.com/barnex/se-lang"
 	"github.com/barnex/se-lang/ast"
 )
 
-func Compile(src io.Reader) (_ Prog, e error) {
+func Compile(src io.Reader) (Prog, error) {
 	n, err := ast.Parse(src)
 	if err != nil {
 		return nil, err
 	}
+	return CompileAST(n)
+}
 
-	//defer func() {
-	//	switch p := recover().(type) {
-	//	default:
-	//		panic(p)
-	//	case nil:
-	//	case se.Error:
-	//		e = p
-	//	}
-	//}()
+func CompileAST(root ast.Node) (_ Prog, err error) {
+	defer func() {
+		switch e := recover().(type) {
+		case nil: //OK
+		default:
+			panic(e)
+		case se.Error:
+			err = e
+		}
+	}()
 
-	return compileExpr(n), nil
+	ast.Resolve(root)
+	return compileExpr(root), nil
+}
+
+func Eval(p Prog) (Value, error) {
+	var s Stack
+	p.Eval(&s)
+	if s.Len() != 1 {
+		return nil, fmt.Errorf("got %v values: %v", s.Len, s)
+	}
+	return s.Pop(), nil
 }
 
 func compileExpr(n ast.Node) Prog {
 	switch n := n.(type) {
 	default:
 		panic(unhandled(n))
+	case *ast.Call:
+		return compileCall(n)
+	case *ast.Ident:
+		return compileIdent(n)
+	case *ast.Lambda:
+		return compileLambda(n)
 	case *ast.Num:
 		return &Const{n.Value}
-		//case *ast.Ident:
-		//	return compileVar(n.Var)
-		//case *ast.Call:
-		//	return compileCall(n)
-		//case *ast.Lambda:
-		//	return compileLambda(n)
 	}
 }
 

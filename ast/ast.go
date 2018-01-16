@@ -26,6 +26,7 @@ func (n *Num) PrintTo(w io.Writer) {
 // Ident is an identifier Node, e.g.: 'sqrt'
 type Ident struct {
 	Name string
+	Var
 }
 
 func (n *Ident) PrintTo(w io.Writer) {
@@ -46,6 +47,7 @@ func (n *Call) PrintTo(w io.Writer) {
 // Lambda is a lambda expression node, e.g.: 'x->x*x'
 type Lambda struct {
 	Args []*Ident
+	Cap  []*CaptVar
 	Body Node
 }
 
