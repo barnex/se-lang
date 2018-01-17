@@ -24,6 +24,7 @@ func main() {
 			fmt.Println(err)
 			continue
 		}
+		ast.Resolve(expr)
 
 		fmt.Println(ast.ToString(expr))
 

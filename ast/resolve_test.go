@@ -3,8 +3,6 @@ package ast
 import (
 	"strings"
 	"testing"
-
-	se "github.com/barnex/se-lang"
 )
 
 func TestResolve(t *testing.T) {
@@ -35,30 +33,30 @@ func TestResolve(t *testing.T) {
 	}
 }
 
-func TestResolveUndefined(t *testing.T) {
-	cases := []struct {
-		src string
-	}{
-		{`x`},
-		{`x->y`},
-	}
-
-	for _, c := range cases {
-		ast, err := Parse(strings.NewReader(c.src))
-		if err != nil || ast == nil {
-			t.Fatalf("%v: have %v, %v", c.src, ast, err)
-		}
-		func() {
-			defer func() {
-				switch e := recover().(type) {
-				case nil:
-					t.Errorf("expected undefined")
-				default:
-					panic(e) // re-throw
-				case se.Error: // ok
-				}
-			}()
-			Resolve(ast)
-		}()
-	}
-}
+//func TestResolveUndefined(t *testing.T) {
+//	cases := []struct {
+//		src string
+//	}{
+//		{`x`},
+//		{`x->y`},
+//	}
+//
+//	for _, c := range cases {
+//		ast, err := Parse(strings.NewReader(c.src))
+//		if err != nil || ast == nil {
+//			t.Fatalf("%v: have %v, %v", c.src, ast, err)
+//		}
+//		func() {
+//			defer func() {
+//				switch e := recover().(type) {
+//				case nil:
+//					t.Errorf("expected undefined")
+//				default:
+//					panic(e) // re-throw
+//				case se.Error: // ok
+//				}
+//			}()
+//			Resolve(ast)
+//		}()
+//	}
+//}

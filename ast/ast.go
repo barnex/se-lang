@@ -31,6 +31,11 @@ type Ident struct {
 
 func (n *Ident) PrintTo(w io.Writer) {
 	fmt.Fprint(w, n.Name)
+	if n.Var != nil {
+		fmt.Fprint(w, n.Var)
+	} else {
+		fmt.Fprint(w, "?")
+	}
 }
 
 // Call is a function call Node, e.g.: 'sqrt(2)'

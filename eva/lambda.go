@@ -1,25 +1,26 @@
 package eva
 
-import "github.com/barnex/se-lang/ast"
+import (
+	"github.com/barnex/se-lang/ast"
+)
 
 func compileLambda(n *ast.Lambda) Prog {
-	panic("todo")
+	return &Lambda{
+		NArgs: len(n.Args),
+		Body:  compileExpr(n.Body),
+	}
 }
 
 type Lambda struct {
+	NArgs int
+	Body  Prog
 }
 
-func (n *Lambda) Eval() Value {
-	panic("todo")
+func (p *Lambda) Eval(s *Machine) {
+	s.Push(p, "lambda: self")
 }
 
-//func (n *PLambda) Apply(args []Value) Value {
-//	for i, a := range n.Args {
-//		a.Push(args[i])
-//	}
-//	v := n.Body.Eval()
-//	for _, a := range n.Args {
-//		a.Pop()
-//	}
-//	return v
-//}
+func (p *Lambda) Apply(m *Machine) {
+	p.Body.Eval(m)
+	//	m.Push(666.6, "l")
+}

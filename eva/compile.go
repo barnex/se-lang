@@ -32,12 +32,12 @@ func CompileAST(root ast.Node) (_ Prog, err error) {
 }
 
 func Eval(p Prog) (Value, error) {
-	var s Stack
-	p.Eval(&s)
-	if s.Len() != 1 {
-		return nil, fmt.Errorf("got %v values: %v", s.Len, s)
+	var m Machine
+	p.Eval(&m)
+	if len(m.s) != 1 {
+		return nil, fmt.Errorf("got %v values: %v", len(m.s), m.s)
 	}
-	return s.Pop(), nil
+	return m.Pop("program return"), nil
 }
 
 func compileExpr(n ast.Node) Prog {

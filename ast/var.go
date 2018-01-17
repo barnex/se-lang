@@ -31,7 +31,8 @@ type GlobVar struct {
 	Name string
 }
 
-func (l *GlobVar) variable() {}
+func (l *GlobVar) variable()      {}
+func (l *GlobVar) String() string { return "$$" }
 
 // A LocalVar refers to a local variable:
 // a variable that exist on a call stack (argument or local define)

@@ -4,6 +4,6 @@ type Const struct {
 	v Value
 }
 
-func (c Const) Eval(s *Stack) {
-	s.Push(c.v)
+func (c Const) Eval(s *Machine) {
+	s.Push(c.v, "const")
 }

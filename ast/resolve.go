@@ -1,11 +1,9 @@
 package ast
 
-import (
-	se "github.com/barnex/se-lang"
-)
+import ()
 
 func Resolve(n Node) {
-	resolve(Frames{prelude}, n)
+	resolve(Frames{}, n)
 }
 
 func resolve(s Frames, n Node) {
@@ -33,10 +31,9 @@ func resolveIdent(s Frames, id *Ident) {
 
 	name := id.Name
 	v, defScope := s.Find(name)
-	if v == nil {
-		panic(se.Errorf("undefined: %v", name))
-	}
-	//usingScope := s.Last()
+	//if v == nil {
+	//	panic(se.Errorf("undefined: %v", name))
+	//}
 
 	switch {
 	case defScope == len(s)-1: // local variable

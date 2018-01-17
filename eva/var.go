@@ -1,12 +1,15 @@
 package eva
 
 import (
+	"fmt"
+
 	se "github.com/barnex/se-lang"
 	"github.com/barnex/se-lang/ast"
 )
 
 var prelude = map[string]Prog{
 	"add": fn(add),
+	"mul": fn(mul),
 }
 
 func compileIdent(id *ast.Ident) Prog {
@@ -14,41 +17,55 @@ func compileIdent(id *ast.Ident) Prog {
 	default:
 		panic(unhandled(n))
 	case nil:
-		panic(se.Errorf("undefined: %q", id.Name))
+		return compileGlobal(id)
 	case *ast.LocalVar:
 		return compileLocal(n)
-	case *ast.GlobVar:
-		return compileGlobal(n)
+		//case *ast.GlobVar:
+		//return compileGlobal(n)
 	}
 }
 
-func compileGlobal(n *ast.GlobVar) Prog {
-	v, ok := prelude[n.Name]
+func compileGlobal(id *ast.Ident) Prog {
+	assert(id.Var == nil)
+	v, ok := prelude[id.Name]
 	if !ok {
-		panic(se.Errorf("undefined: %q", n.Name))
+		panic(se.Errorf("undefined: %q", id.Name))
 	}
 	return v
 }
 
 func compileLocal(n *ast.LocalVar) Prog {
-	return &FromTop{n.Index}
+	return &FromEBP{-n.Index - 2}
 }
 
-type FromTop struct {
-	Index int
+type FromEBP struct {
+	Offset int
 }
 
-func (p *FromTop) Eval(s *Stack) {
-	s.Push(s.FromTop(p.Index))
+func (p *FromEBP) Eval(s *Machine) {
+	msg := fmt.Sprint("local ", p.Offset)
+	s.Push(s.FromEBP(p.Offset, msg), msg)
 }
 
-func add(s *Stack) {
-	a := s.Pop().(float64)
-	b := s.Pop().(float64)
-	s.Push(a + b)
+func add(s *Machine) {
+	a := s.FromEBP(-2, "a").(float64)
+	b := s.FromEBP(-3, "b").(float64)
+	s.Push(a+b, "a+b")
 }
 
-type fn func(*Stack)
+func mul(s *Machine) {
+	a := s.FromEBP(-2, "a").(float64)
+	b := s.FromEBP(-3, "b").(float64)
+	s.Push(a*b, "a*b")
+}
 
-func (f fn) Eval(s *Stack)  { s.Push(f) }
-func (f fn) Apply(s *Stack) { f(s) }
+type fn func(*Machine)
+
+func (f fn) Eval(s *Machine)  { s.Push(f, "func:self") }
+func (f fn) Apply(s *Machine) { f(s) }
+
+func assert(x bool) {
+	if !x {
+		panic("assertion failed")
+	}
+}
