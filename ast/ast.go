@@ -60,16 +60,16 @@ func (n *Lambda) PrintTo(w io.Writer) {
 	fmt.Fprint(w, "(")
 	printList(w, n.Args)
 
-	//if len(n.Cap) > 0 {
-	//	fmt.Fprint(w, "[")
-	//	for i, c := range n.Cap {
-	//		if i != 0 {
-	//			fmt.Fprint(w, ",")
-	//		}
-	//		fmt.Fprint(w, c, " ")
-	//	}
-	//	fmt.Fprint(w, "]")
-	//}
+	if len(n.Cap) > 0 {
+		fmt.Fprint(w, "[")
+		for i, c := range n.Cap {
+			if i != 0 {
+				fmt.Fprint(w, ",")
+			}
+			fmt.Fprint(w, c, " ")
+		}
+		fmt.Fprint(w, "]")
+	}
 
 	fmt.Fprint(w, lex.TLambda)
 	n.Body.PrintTo(w)

@@ -31,15 +31,15 @@ func resolveIdent(s Frames, id *Ident) {
 
 	name := id.Name
 	v, defScope := s.Find(name)
-	//if v == nil {
-	//	panic(se.Errorf("undefined: %v", name))
-	//}
+	if v == nil {
+		defScope = -1 // not found
+	}
 
 	switch {
 	case defScope == len(s)-1: // local variable
 		id.Var = v
-	case defScope == 0: // global variable
-		// TODO
+	case defScope == -1: // not found
+		// leave open for now, compile will search for global
 	default: // captured variable
 		// loop over frames, capture from defscope+1 to last, capture all the way
 		for i := defScope + 1; i < len(s); i++ {
