@@ -41,4 +41,11 @@ type LocalVar struct {
 }
 
 func (l *LocalVar) variable()      {}
-func (l *LocalVar) String() string { return fmt.Sprint("$", l.Index) }
+func (l *LocalVar) String() string { return fmt.Sprint("L", l.Index) }
+
+type Arg struct {
+	Index int
+}
+
+func (l *Arg) variable()      {}
+func (l *Arg) String() string { return fmt.Sprint("$", l.Index) }

@@ -34,10 +34,10 @@ func CompileAST(root ast.Node) (_ Prog, err error) {
 func Eval(p Prog) (Value, error) {
 	var m Machine
 	p.Eval(&m)
-	if len(m.s) != 1 {
-		return nil, fmt.Errorf("got %v values: %v", len(m.s), m.s)
+	if len(m.s) != 0 {
+		return nil, fmt.Errorf("left dirty stack: %v", m.s)
 	}
-	return m.Pop("program return"), nil
+	return m.RA, nil
 }
 
 func compileExpr(n ast.Node) Prog {

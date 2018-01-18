@@ -21,32 +21,31 @@ type Call struct {
 }
 
 func (n *Call) Eval(m *Machine) {
-	fmt.Println("call:", n.F)
-
+	fmt.Printf("eval %#v\n", n)
 	n.F.Eval(m)
-	f := m.Pop("call:applier").(Applier)
+	f := m.RA.(Applier)
+
+	//m.Grow(f.NFrame())
 
 	for i := len(n.Args) - 1; i >= 0; i-- {
 		n.Args[i].Eval(m)
+		//fmt.Println("stack bp+", i, "=", m.RA)
+		//m.s[m.BP+i] = m.RA
+		m.Push(m.RA, fmt.Sprint("arg", i))
 	}
 
-	m.Push(m.EBP, "ebp")
-	m.EBP = m.ESP()
-	fmt.Println("ebp=", m.EBP)
+	m.Push(m.BP, "call-preamble")
+	m.BP = m.SP()
+	fmt.Println("bp=", m.BP)
 
 	f.Apply(m)
 
-	ret := m.Pop("call:return")
+	m.BP = m.Pop("call-restore-bp").(int)
+	m.Grow(-f.NFrame())
 
-	m.EBP = m.Pop("ebp").(int)
-
-	for range n.Args {
-		m.Pop("call:shrink")
-	}
-
-	m.Push(ret, "call:return")
 }
 
 type Applier interface {
 	Apply(s *Machine)
+	NFrame() int
 }

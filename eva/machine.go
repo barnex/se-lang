@@ -3,11 +3,12 @@ package eva
 import "fmt"
 
 type Machine struct {
-	s   []Value
-	EBP int
+	s  []Value
+	RA Value
+	BP int
 }
 
-func (m *Machine) ESP() int {
+func (m *Machine) SP() int {
 	return len(m.s)
 }
 
@@ -28,22 +29,24 @@ func (m *Machine) Pop(msg string) Value {
 	return v
 }
 
-func (m *Machine) FromEBP(delta int, msg string) Value {
+func (m *Machine) FromBP(delta int, msg string) Value {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Printf("fromebp %v: %v %v\n", delta, msg, err)
+			panic(err)
 		}
 	}()
 
-	v := m.s[m.EBP+delta]
+	v := m.s[m.BP+delta]
 	fmt.Printf("fromebp %v: %v %v\n", delta, v, msg)
 	return v
 }
 
 func (m *Machine) Grow(delta int) {
+	fmt.Println("grow", delta)
 	new := len(m.s) + delta
-	if new > cap(m.s) {
-		m.s = append(m.s, make([]Value, new-cap(m.s))...)
+	if new >= cap(m.s) {
+		m.s = append(m.s, make([]Value, 1+new-cap(m.s))...)
 	}
 	m.s = m.s[:new]
 }
