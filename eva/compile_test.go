@@ -25,6 +25,7 @@ func TestEval(t *testing.T) {
 		{`((x,y)->y)(1,2)`, 2.0},                   // lambda: second
 		{`((f,i)->f(i))((x->x*x), 3)`, 9.0},        // lambda: apply f to i
 		{`( (f,i)->f(f(i)) ) ( (x->x*2), 1)`, 4.0}, // lambda: apply f twice
+		//{`(x->()->x)(1)`, 1.0},                     // closure
 		//{`(x->y->x+y)(1)(2)`, 3.0},                 // closure
 		//{`((f,i)->f(i))(x->x*x, 3)`, 9.0},
 		//{/`d->x->x+d`, 1.0},

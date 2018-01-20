@@ -24,28 +24,16 @@ func (a *Arg) String() string {
 	return fmt.Sprint("$", a.Index)
 }
 
-// A CaptVar refers to a captured variable:
-// a variable closed over by a closure.
-//type CaptVar struct {
-//	Name string
-//	Src  Var // variable being captured from the parent frame
-//	Dst  Var // variable being captured to
-//}
+type LocVar struct {
+	Index int
+}
 
-//func (c *CaptVar) String() string { return fmt.Sprintf("[%v=p.%v]", c.Name, c.Src) }
+func (l *LocVar) String() string {
+	return fmt.Sprint("L", l.Index)
+}
 
-// A LocalVar refers to a local variable:
-// a variable that exist on a call stack (argument or local define)
-//type LocVar struct {
-//	Name  string
-//	Index int
-//}
-
-//func (l *LocVar) variable()      {}
-//func (l *LocVar) String() string { return fmt.Sprint("L", l.Index) }
-
-func compileArg(a *Arg) Prog {
-	panic("todo")
+func (l *LocVar) Exec(m *Machine) {
+	m.SetRA(m.FromBP(l.Index))
 }
 
 //func compileGlobal(id *ast.Ident) Prog {

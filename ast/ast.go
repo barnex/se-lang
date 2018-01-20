@@ -52,20 +52,20 @@ type Object interface{}
 
 // Lambda is a lambda expression node, e.g.: 'x->x*x'
 type Lambda struct {
-	Args []*Ident
-	Body Node
-	Object
+	Args   []*Ident
+	Body   Node
+	Object // *eva.LambdaFrame
 }
 
 func (n *Lambda) PrintTo(w io.Writer) {
 	fmt.Fprint(w, "(")
 	printList(w, n.Args)
 
+	fmt.Fprint(w, lex.TLambda)
 	if n.Object != nil {
-		fmt.Fprint(w, n.Object)
+		fmt.Fprint(w, ":", n.Object)
 	}
 
-	fmt.Fprint(w, lex.TLambda)
 	n.Body.PrintTo(w)
 	fmt.Fprint(w, ")")
 }

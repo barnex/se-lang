@@ -41,15 +41,13 @@ func compileLambda(n *ast.Lambda) Prog {
 }
 
 type Lambda struct {
-	//Args []*Arg
-	//Caps []*ast.CaptVar
-	//Capv []Value
+	Capv []Value
 	Body Prog
 }
 
 var _ Applier = (*Lambda)(nil)
 
-func (p *Lambda) Exec(m *Machine) {
+func (p_ *Lambda) Exec(m *Machine) {
 	//cpy := *p_
 	//cpy.Caps = make([]Value, len(cpy.NCaps))
 	//for i := range cpy.NCaps {
@@ -58,7 +56,7 @@ func (p *Lambda) Exec(m *Machine) {
 	////fmt.Printf("lambda: eval: self=%#v\n", cpy)
 	//s.RA = &cpy
 
-	m.SetRA(p)
+	m.SetRA(p_)
 }
 
 func (p *Lambda) Apply(m *Machine) {
@@ -70,7 +68,11 @@ func (p *Lambda) Apply(m *Machine) {
 
 	m.Push(m.BP())
 	m.SetBP(m.SP())
+	for _, c := range p.Capv {
+		m.Push(c)
+	}
 	p.Body.Exec(m)
+	m.Grow(-len(p.Capv))
 	m.SetBP(m.Pop().(int))
 
 	//if len(p.NCaps) > 0 {
