@@ -2,9 +2,6 @@ package eva
 
 import (
 	"fmt"
-
-	se "github.com/barnex/se-lang"
-	"github.com/barnex/se-lang/ast"
 )
 
 // Var refers to the storage location of a variable,
@@ -46,17 +43,6 @@ func (a *Arg) String() string {
 
 //func (l *LocVar) variable()      {}
 //func (l *LocVar) String() string { return fmt.Sprint("L", l.Index) }
-
-func compileIdent(id *ast.Ident) Prog {
-	switch n := id.Object.(type) {
-	default:
-		panic(unhandled(n))
-	case nil:
-		panic(se.Errorf("compileIdent: undefined: %q", id.Name))
-	case Prog:
-		return n
-	}
-}
 
 func compileArg(a *Arg) Prog {
 	panic("todo")

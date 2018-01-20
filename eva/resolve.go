@@ -1,6 +1,7 @@
 package eva
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/barnex/se-lang/ast"
@@ -8,6 +9,7 @@ import (
 
 func Resolve(n ast.Node) {
 	resolve(Frames{prelude}, n)
+	fmt.Println("*** resolved:", ast.ToString(n))
 }
 
 func resolve(s Frames, n ast.Node) {
@@ -27,6 +29,7 @@ func resolve(s Frames, n ast.Node) {
 }
 
 func resolveCall(s Frames, c *ast.Call) {
+	Log("resolveCall", c)
 	resolve(s, c.F)
 	for _, a := range c.Args {
 		resolve(s, a)
@@ -50,9 +53,13 @@ func resolveIdent(s Frames, id *ast.Ident) {
 	}
 
 	switch {
+	default:
+		panic(fmt.Sprint("unhandled:", defScope))
 	case defScope == -1: // not found
 		// leave open for now, compile will search for global
 	case defScope == len(s)-1: // directly under parent
+		id.Object = v
+	case defScope == 0: // global
 		id.Object = v
 		//id.Parent = s[defScope]
 		//default: // captured variable
@@ -68,6 +75,7 @@ func resolveIdent(s Frames, id *ast.Ident) {
 }
 
 func resolveLambda(s Frames, n *ast.Lambda) {
+	Log("resolveLambda", n)
 	// first define the arguments
 	for i, a := range n.Args {
 		a.Object = &Arg{Index: i}
@@ -84,12 +92,15 @@ type LambdaFrame struct {
 }
 
 func (n *LambdaFrame) Find(name string) Var {
+	Log("lambdaframe: find", name)
 	for _, a := range n.Args {
 		assert(a.Object != nil)
 		if name == a.Name {
+			Log("lambdaframe: found", a.Object)
 			return a.Object.(Var)
 		}
 	}
+	Log("lambdaframe: not found", nil)
 	//for _, a := range n.Caps {
 	//	if name == a.Name {
 	//		return a
@@ -136,12 +147,15 @@ func (s *Frames) Last() Frame {
 }
 
 func (f *Frames) Find(name string) (Var, int) {
+	Log("frames: find", name)
 	s := *f
 	for i := len(s) - 1; i >= 0; i-- {
 		if v := s[i].Find(name); v != nil {
+			Log("frames: found", v)
 			return v, i
 		}
 	}
+	Log("frames: not found", nil)
 	return nil, 0
 }
 

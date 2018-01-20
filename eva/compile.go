@@ -3,6 +3,7 @@ package eva
 import (
 	"fmt"
 
+	se "github.com/barnex/se-lang"
 	"github.com/barnex/se-lang/ast"
 )
 
@@ -46,6 +47,8 @@ type Lambda struct {
 	Body Prog
 }
 
+var _ Applier = (*Lambda)(nil)
+
 func (p *Lambda) Exec(m *Machine) {
 	//cpy := *p_
 	//cpy.Caps = make([]Value, len(cpy.NCaps))
@@ -80,12 +83,6 @@ func (p *Lambda) Apply(m *Machine) {
 	//}
 }
 
-//func (p *Lambda) NFrame() int {
-//	return p.NArgs + len(p.NCaps)
-//}
-
-//var _ Applier = (*Lambda)(nil)
-
 // -------- Call
 
 type Call struct {
@@ -114,6 +111,19 @@ func (p *Call) Exec(m *Machine) {
 
 type Applier interface {
 	Apply(s *Machine)
+}
+
+// -------- Ident
+
+func compileIdent(id *ast.Ident) Prog {
+	switch n := id.Object.(type) {
+	default:
+		panic(unhandled(n))
+	case nil:
+		panic(se.Errorf("compileIdent: undefined: %q: %#v", id.Name, id))
+	case Prog:
+		return n
+	}
 }
 
 // -------- Const
