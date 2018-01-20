@@ -26,16 +26,14 @@ func (n *Num) PrintTo(w io.Writer) {
 // Ident is an identifier Node, e.g.: 'sqrt'
 type Ident struct {
 	Name   string
-	Parent Frame
-	Var
+	Parent Node
+	Object
 }
 
 func (n *Ident) PrintTo(w io.Writer) {
 	fmt.Fprint(w, n.Name)
-	if n.Var != nil {
-		fmt.Fprint(w, n.Var)
-	} else {
-		fmt.Fprint(w, "?")
+	if n.Object != nil {
+		fmt.Fprint(w, n.Object)
 	}
 }
 
@@ -50,26 +48,21 @@ func (n *Call) PrintTo(w io.Writer) {
 	printList(w, n.Args)
 }
 
+type Object interface{}
+
 // Lambda is a lambda expression node, e.g.: 'x->x*x'
 type Lambda struct {
 	Args []*Ident
-	Caps []*CaptVar
 	Body Node
+	Object
 }
 
 func (n *Lambda) PrintTo(w io.Writer) {
 	fmt.Fprint(w, "(")
 	printList(w, n.Args)
 
-	if len(n.Caps) > 0 {
-		fmt.Fprint(w, "[")
-		for i, c := range n.Caps {
-			if i != 0 {
-				fmt.Fprint(w, ",")
-			}
-			fmt.Fprint(w, c, " ")
-		}
-		fmt.Fprint(w, "]")
+	if n.Object != nil {
+		fmt.Fprint(w, n.Object)
 	}
 
 	fmt.Fprint(w, lex.TLambda)
@@ -96,17 +89,4 @@ func ToString(e Node) string {
 	var buf bytes.Buffer
 	e.PrintTo(&buf)
 	return buf.String()
-}
-
-func children(n Node) []Node {
-	switch n := n.(type) {
-	default:
-		panic(unhandled(n))
-	case *Num, *Ident:
-		return nil
-	case *Call:
-		return append([]Node{n.F}, n.Args...)
-	case *Lambda:
-		return []Node{n.Body}
-	}
 }
