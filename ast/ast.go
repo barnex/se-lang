@@ -27,13 +27,13 @@ func (n *Num) PrintTo(w io.Writer) {
 type Ident struct {
 	Name   string
 	Parent Node
-	Object
+	Var    // filled in later by resolve
 }
 
 func (n *Ident) PrintTo(w io.Writer) {
 	fmt.Fprint(w, n.Name)
-	if n.Object != nil {
-		fmt.Fprint(w, ":", n.Object)
+	if n.Var != nil {
+		fmt.Fprint(w, ":", n.Var)
 	}
 }
 
@@ -48,13 +48,19 @@ func (n *Call) PrintTo(w io.Writer) {
 	printList(w, n.Args)
 }
 
-type Object interface{}
+type Var interface{}
 
 // Lambda is a lambda expression node, e.g.: 'x->x*x'
 type Lambda struct {
-	Args   []*Ident
-	Body   Node
-	Object // *eva.LambdaFrame
+	Args []*Ident
+	Caps []Capture // filled in by resolve
+	Body Node
+}
+
+type Capture struct {
+	Name string
+	Src  Var // variable being captured from the parent frame
+	Dst  Var // variable being captured to
 }
 
 func (n *Lambda) PrintTo(w io.Writer) {
@@ -62,12 +68,20 @@ func (n *Lambda) PrintTo(w io.Writer) {
 	printList(w, n.Args)
 
 	fmt.Fprint(w, lex.TLambda)
-	if n.Object != nil {
-		fmt.Fprint(w, ":", n.Object)
+	if len(n.Caps) > 0 {
+		fmt.Fprint(w, "[")
+		for _, c := range n.Caps {
+			fmt.Fprint(w, c, ",")
+		}
+		fmt.Fprint(w, "]")
 	}
 
 	n.Body.PrintTo(w)
 	fmt.Fprint(w, ")")
+}
+
+func (c Capture) String() string {
+	return fmt.Sprint(c.Dst, "=", c.Src)
 }
 
 // printList prints a slice whose elements implement Node, e.g.:

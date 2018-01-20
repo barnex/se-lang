@@ -30,33 +30,37 @@ func compileExpr(n ast.Node) Prog {
 
 func compileLambda(n *ast.Lambda) Prog {
 	p := &Lambda{
-		//Args: n.Args,
-		//Caps: n.Caps,
 		Body: compileExpr(n.Body),
 	}
-	//for i := range p.Caps{
-	//	p.Caps[i].Dst = &ast.
+	//p.Caps = make([]Capture, len(n.Caps))
+	//for i := range p.Caps {
+	//	p.Caps[i].Src = compileVar(n.Caps[i].Src)
+	//	p.Caps[i].Dst = compileVar(n.Caps[i].Dst)
 	//}
 	return p
 }
 
 type Lambda struct {
+	Caps []Capture
 	Capv []Value
 	Body Prog
+}
+
+type Capture struct {
+	Src, Dst Var
 }
 
 var _ Applier = (*Lambda)(nil)
 
 func (p_ *Lambda) Exec(m *Machine) {
-	//cpy := *p_
-	//cpy.Caps = make([]Value, len(cpy.NCaps))
-	//for i := range cpy.NCaps {
-	//	cpy.Caps[i] = s.FromBP(cpy.NCaps[i], "capture")
+	p := *p_
+	// TODO: push captures
+	//p.Capv = make([]Value, len(p.Caps))
+	//for i := range p.Caps {
+	//	p.Caps[i].Exec(m)
+	//	//g
 	//}
-	////fmt.Printf("lambda: eval: self=%#v\n", cpy)
-	//s.RA = &cpy
-
-	m.SetRA(p_)
+	m.SetRA(&p)
 }
 
 func (p *Lambda) Apply(m *Machine) {
@@ -118,7 +122,7 @@ type Applier interface {
 // -------- Ident
 
 func compileIdent(id *ast.Ident) Prog {
-	switch n := id.Object.(type) {
+	switch n := id.Var.(type) {
 	default:
 		panic(unhandled(n))
 	case nil:

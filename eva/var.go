@@ -2,7 +2,16 @@ package eva
 
 import (
 	"fmt"
+
+	"github.com/barnex/se-lang/ast"
 )
+
+func compileVar(n ast.Var) Prog {
+	switch n := n.(type) {
+	default:
+		panic(unhandled(n))
+	}
+}
 
 // Var refers to the storage location of a variable,
 // so we can set or retreive the its value.
