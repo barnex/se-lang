@@ -25,7 +25,8 @@ func (n *Num) PrintTo(w io.Writer) {
 
 // Ident is an identifier Node, e.g.: 'sqrt'
 type Ident struct {
-	Name string
+	Name   string
+	Parent Frame
 	Var
 }
 
@@ -52,7 +53,7 @@ func (n *Call) PrintTo(w io.Writer) {
 // Lambda is a lambda expression node, e.g.: 'x->x*x'
 type Lambda struct {
 	Args []*Ident
-	Cap  []*CaptVar
+	Caps []*CaptVar
 	Body Node
 }
 
@@ -60,9 +61,9 @@ func (n *Lambda) PrintTo(w io.Writer) {
 	fmt.Fprint(w, "(")
 	printList(w, n.Args)
 
-	if len(n.Cap) > 0 {
+	if len(n.Caps) > 0 {
 		fmt.Fprint(w, "[")
-		for i, c := range n.Cap {
+		for i, c := range n.Caps {
 			if i != 0 {
 				fmt.Fprint(w, ",")
 			}

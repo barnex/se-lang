@@ -5,25 +5,21 @@ import (
 )
 
 func compileLambda(n *ast.Lambda) Prog {
-
-	// TODO: captured arguments should come before regular args, not after
-
-	ncaps := make([]int, len(n.Cap))
-	for i := range ncaps {
-		ncaps[i] = n.Cap[i].ParVar.Index
+	p := &Lambda{
+		Args: n.Args,
+		Caps: n.Caps,
+		Body: compileExpr(n.Body),
 	}
-	return &Lambda{
-		NArgs: len(n.Args),
-		NCaps: ncaps,
-		Body:  compileExpr(n.Body),
+	for i := range p.Caps{
+		p.Caps[i].Dst = &ast.
 	}
 }
 
 type Lambda struct {
-	NArgs int
-	NCaps []int
-	Caps  []Value
-	Body  Prog
+	Args []*ast.Ident
+	Caps []*ast.CaptVar
+	Capv []Value
+	Body Prog
 }
 
 func (p_ *Lambda) Eval(s *Machine) {

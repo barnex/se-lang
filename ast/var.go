@@ -9,43 +9,35 @@ type Var interface {
 }
 
 var (
+	_ Var = (*Arg)(nil)
 	_ Var = (*CaptVar)(nil)
-	_ Var = (*GlobVar)(nil)
-	_ Var = (*LocalVar)(nil)
 )
 
 // A CaptVar refers to a captured variable:
 // a variable closed over by a closure.
 type CaptVar struct {
-	Name   string
-	ParVar *LocalVar // variable being captured from the parent frame
-	Local  *LocalVar // local variable being captured to
+	Name string
+	Src  Var // variable being captured from the parent frame
+	Dst  Var // variable being captured to
 }
 
 func (c *CaptVar) variable()      {}
-func (c *CaptVar) String() string { return fmt.Sprintf("[%v=p.%v]", c.Local, c.ParVar) }
-
-// A GlobVar refers to a global variabe:
-// a variable with a constant address.
-type GlobVar struct {
-	Name string
-}
-
-func (l *GlobVar) variable()      {}
-func (l *GlobVar) String() string { return "$$" }
-
-// A LocalVar refers to a local variable:
-// a variable that exist on a call stack (argument or local define)
-type LocalVar struct {
-	Index int
-}
-
-func (l *LocalVar) variable()      {}
-func (l *LocalVar) String() string { return fmt.Sprint("L", l.Index) }
+func (c *CaptVar) String() string { return fmt.Sprintf("[%v=p.%v]", c.Name, c.Src) }
 
 type Arg struct {
+	Name  string
 	Index int
 }
 
 func (l *Arg) variable()      {}
 func (l *Arg) String() string { return fmt.Sprint("$", l.Index) }
+
+// A LocalVar refers to a local variable:
+// a variable that exist on a call stack (argument or local define)
+//type LocVar struct {
+//	Name  string
+//	Index int
+//}
+
+//func (l *LocVar) variable()      {}
+//func (l *LocVar) String() string { return fmt.Sprint("L", l.Index) }

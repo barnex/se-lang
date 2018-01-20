@@ -36,25 +36,27 @@ func resolveIdent(s Frames, id *Ident) {
 	}
 
 	switch {
-	case defScope == len(s)-1: // local variable
-		id.Var = v
 	case defScope == -1: // not found
 		// leave open for now, compile will search for global
+	case defScope == len(s)-1: // local variable
+		id.Var = v
+		id.Parent = s[defScope]
 	default: // captured variable
 		// loop over frames, capture from defscope+1 to last, capture all the way
 		for i := defScope + 1; i < len(s); i++ {
 			v := s[i-1].Find(name)
-			s[i].(*Lambda).DoCapture(name, v.(*LocalVar)) // only locals can be captured
+			s[i].(*Lambda).DoCapture(name, v)
 		}
 		v := s[len(s)-1].Find(name)
 		id.Var = v
+		id.Parent = s[defScope]
 	}
 }
 
 func resolveLambda(s Frames, n *Lambda) {
 	// first define the arguments
 	for i, a := range n.Args {
-		a.Var = &LocalVar{i}
+		a.Var = &Arg{Name: a.Name, Index: i}
 	}
 
 	// then resolve the body
@@ -70,30 +72,29 @@ func (n *Lambda) Find(name string) Var {
 			return a.Var
 		}
 	}
-	for _, a := range n.Cap {
+	for _, a := range n.Caps {
 		if name == a.Name {
-			return a.Local // ?
+			return a
 		}
 	}
-	return nil
+	return nil // not found, maybe global
 }
 
-func (n *Lambda) DoCapture(name string, v *LocalVar) (local *CaptVar) {
-	//log.Printf("docapture %q %#v", name, v)
+// TODO: should not be method
+func (n *Lambda) DoCapture(name string, v Var) {
 	if v := n.Find(name); v != nil {
-		return v.(*CaptVar) // already captured
+		return // already captured
 	}
 	c := &CaptVar{
-		Name:   name,
-		ParVar: v,
-		Local:  &LocalVar{Index: n.NumLocals()},
+		Name: name,
+		Src:  v,
+		//Dst:  &CaptVar{},
 	}
-	n.Cap = append(n.Cap, c)
-	return c
+	n.Caps = append(n.Caps, c)
 }
 
 func (n *Lambda) NumLocals() int {
-	return len(n.Args) + len(n.Cap)
+	return len(n.Args) + len(n.Caps)
 }
 
 type Frame interface {
