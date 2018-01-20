@@ -7,39 +7,84 @@ import (
 	"github.com/barnex/se-lang/ast"
 )
 
+// Var refers to the storage location of a variable,
+// so we can set or retreive the its value.
+type Var interface {
+}
+
+type Arg struct {
+	Name  string
+	Index int
+}
+
+func (l *Arg) String() string { return fmt.Sprint("$", l.Index) }
+
+var (
+	_ Var = (*Arg)(nil)
+	//_ Var = (*CaptVar)(nil)
+)
+
+// A CaptVar refers to a captured variable:
+// a variable closed over by a closure.
+//type CaptVar struct {
+//	Name string
+//	Src  Var // variable being captured from the parent frame
+//	Dst  Var // variable being captured to
+//}
+
+//func (c *CaptVar) String() string { return fmt.Sprintf("[%v=p.%v]", c.Name, c.Src) }
+
+// A LocalVar refers to a local variable:
+// a variable that exist on a call stack (argument or local define)
+//type LocVar struct {
+//	Name  string
+//	Index int
+//}
+
+//func (l *LocVar) variable()      {}
+//func (l *LocVar) String() string { return fmt.Sprint("L", l.Index) }
+
 func compileIdent(id *ast.Ident) Prog {
-	switch n := id.Var.(type) {
+	switch n := id.Object.(type) {
 	default:
 		panic(unhandled(n))
 	case nil:
-		return compileGlobal(id)
-	case *ast.LocalVar:
-		return compileLocalVar(n)
-	}
-}
-
-func compileGlobal(id *ast.Ident) Prog {
-	assert(id.Var == nil)
-	v, ok := prelude[id.Name]
-	if !ok {
 		panic(se.Errorf("undefined: %q", id.Name))
+	case *Arg:
+		return compileArg(n)
 	}
-	return v
 }
 
-func compileLocalVar(n *ast.LocalVar) Prog {
-	return &FromEBP{-2 - n.Index}
+func compileArg(a *Arg) Prog {
+	panic("todo")
 }
 
-func compileLocal(i int) Prog {
-	return &FromEBP{-2 - i}
-}
-
-type FromEBP struct {
-	Offset int
-}
-
-func (p *FromEBP) Eval(s *Machine) {
-	s.RA = s.FromBP(p.Offset, "local")
-	fmt.Println("eval local", p.Offset, "RA=", s.RA)
-}
+//func compileGlobal(id *ast.Ident) Prog {
+//	assert(id.Var == nil)
+//	v, ok := prelude[id.Name]
+//	if !ok {
+//		panic(se.Errorf("undefined: %q", id.Name))
+//	}
+//	return v
+//}
+//
+//func compileLocalVar(n *ast.LocalVar) Prog {
+//	return &FromEBP{-2 - n.Index}
+//}
+//
+//func compileLocal(i int) Prog {
+//	return &FromEBP{-2 - i}
+//}
+//
+//type FromEBP struct {
+//	Offset int
+//}
+//
+//func (p *FromEBP) Eval(s *Machine) {
+//	s.RA = s.FromBP(p.Offset, "local")
+//	fmt.Println("eval local", p.Offset, "RA=", s.RA)
+//}
+//
+//type Var interface {
+//	variable()
+//}

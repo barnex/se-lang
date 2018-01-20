@@ -19,7 +19,7 @@ func mul(m *Machine) {
 
 type fn func(*Machine)
 
-func (f fn) Eval(m *Machine)  { m.RA = f }
+func (f fn) Exec(m *Machine)  { m.RA = f }
 func (f fn) Apply(m *Machine) { f(m) }
 func (f fn) NFrame() int      { return 2 }
 
@@ -29,4 +29,4 @@ func assert(x bool) {
 	}
 }
 
-var _ Applier = fn(nil)
+//var _ Applier = fn(nil)

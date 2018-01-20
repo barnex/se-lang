@@ -6,40 +6,43 @@ import (
 
 func compileLambda(n *ast.Lambda) Prog {
 	p := &Lambda{
-		Args: n.Args,
-		Caps: n.Caps,
+		//Args: n.Args,
+		//Caps: n.Caps,
 		Body: compileExpr(n.Body),
 	}
-	for i := range p.Caps{
-		p.Caps[i].Dst = &ast.
-	}
+	//for i := range p.Caps{
+	//	p.Caps[i].Dst = &ast.
+	//}
+	return p
 }
 
 type Lambda struct {
-	Args []*ast.Ident
-	Caps []*ast.CaptVar
-	Capv []Value
+	//Args []*Arg
+	//Caps []*ast.CaptVar
+	//Capv []Value
 	Body Prog
 }
 
-func (p_ *Lambda) Eval(s *Machine) {
-	cpy := *p_
-	cpy.Caps = make([]Value, len(cpy.NCaps))
-	for i := range cpy.NCaps {
-		cpy.Caps[i] = s.FromBP(cpy.NCaps[i], "capture")
-	}
-	//fmt.Printf("lambda: eval: self=%#v\n", cpy)
-	s.RA = &cpy
+func (p *Lambda) Exec(m *Machine) {
+	//cpy := *p_
+	//cpy.Caps = make([]Value, len(cpy.NCaps))
+	//for i := range cpy.NCaps {
+	//	cpy.Caps[i] = s.FromBP(cpy.NCaps[i], "capture")
+	//}
+	////fmt.Printf("lambda: eval: self=%#v\n", cpy)
+	//s.RA = &cpy
+
+	m.RA = p
 }
 
 func (p *Lambda) Apply(m *Machine) {
 	//m.Grow(len(p.Caps))
-	for i := range p.Caps {
-		//m.s[m.BP+p.NArgs+i] = p.Caps[i]
-		m.Push(p.Caps[i], "arg") // todo reverse order
-	}
+	//for i := range p.Caps {
+	//	//m.s[m.BP+p.NArgs+i] = p.Caps[i]
+	//	m.Push(p.Caps[i], "arg") // todo reverse order
+	//}
 
-	p.Body.Eval(m)
+	p.Body.Exec(m)
 
 	//if len(p.NCaps) > 0 {
 	//	// free captures
@@ -51,8 +54,8 @@ func (p *Lambda) Apply(m *Machine) {
 	//}
 }
 
-func (p *Lambda) NFrame() int {
-	return p.NArgs + len(p.NCaps)
-}
+//func (p *Lambda) NFrame() int {
+//	return p.NArgs + len(p.NCaps)
+//}
 
-var _ Applier = (*Lambda)(nil)
+//var _ Applier = (*Lambda)(nil)

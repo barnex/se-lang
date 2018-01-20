@@ -2,42 +2,12 @@ package eva
 
 import (
 	"fmt"
-	"io"
 
-	se "github.com/barnex/se-lang"
 	"github.com/barnex/se-lang/ast"
 )
 
-func Compile(src io.Reader) (Prog, error) {
-	n, err := ast.Parse(src)
-	if err != nil {
-		return nil, err
-	}
-	return CompileAST(n)
-}
-
-func CompileAST(root ast.Node) (_ Prog, err error) {
-	defer func() {
-		switch e := recover().(type) {
-		case nil: //OK
-		default:
-			panic(e)
-		case se.Error:
-			err = e
-		}
-	}()
-
-	ast.Resolve(root)
-	return compileExpr(root), nil
-}
-
-func Eval(p Prog) (Value, error) {
-	var m Machine
-	p.Eval(&m)
-	if len(m.s) != 0 {
-		return nil, fmt.Errorf("left dirty stack: %v", m.s)
-	}
-	return m.RA, nil
+type Prog interface {
+	Exec(s *Machine)
 }
 
 func compileExpr(n ast.Node) Prog {
@@ -51,9 +21,70 @@ func compileExpr(n ast.Node) Prog {
 	case *ast.Lambda:
 		return compileLambda(n)
 	case *ast.Num:
-		return &Const{n.Value}
+		return compileNum(n)
 	}
 }
+
+// -------- Call
+
+type Call struct {
+	F    Prog
+	Args []Prog
+}
+
+func compileCall(n *ast.Call) Prog {
+	f := compileExpr(n.F)
+	args := make([]Prog, len(n.Args))
+	for i, a := range n.Args {
+		args[i] = compileExpr(a)
+	}
+	return &Call{f, args}
+}
+
+func (n *Call) Exec(m *Machine) {
+	//fmt.Printf("eval %#v\n", n)
+	//n.F.Eval(m)
+	//f := m.RA.(Applier)
+
+	////m.Grow(f.NFrame())
+
+	//for i := len(n.Args) - 1; i >= 0; i-- {
+	//	n.Args[i].Eval(m)
+	//	//fmt.Println("stack bp+", i, "=", m.RA)
+	//	//m.s[m.BP+i] = m.RA
+	//	m.Push(m.RA, fmt.Sprint("arg", i))
+	//}
+
+	//m.Push(m.BP, "call-preamble")
+	//m.BP = m.SP()
+	//fmt.Println("bp=", m.BP)
+
+	//f.Apply(m)
+
+	//m.BP = m.Pop("call-restore-bp").(int)
+	//m.Grow(-f.NFrame())
+}
+
+//type Applier interface {
+//	Apply(s *Machine)
+//	NFrame() int
+//}
+
+// -------- Const
+
+type Const struct {
+	v Value
+}
+
+func (c Const) Exec(m *Machine) {
+	m.RA = c.v
+}
+
+func compileNum(n *ast.Num) Prog {
+	return &Const{n.Value}
+}
+
+// --------
 
 func unhandled(x interface{}) string {
 	return fmt.Sprintf("BUG: unhandled case: %T", x)
