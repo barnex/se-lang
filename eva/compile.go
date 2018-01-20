@@ -44,11 +44,11 @@ func compileCall(n *ast.Call) Prog {
 func (p *Call) Exec(m *Machine) {
 	for i := len(p.Args) - 1; i >= 0; i-- {
 		p.Args[i].Exec(m) // eval argument
-		m.Push(m.RA)      // push argument
+		m.Push(m.RA())    // push argument
 	}
-	p.F.Exec(m)             // eval the function
-	m.RA.(Applier).Apply(m) // apply function to arguments
-	m.Grow(-len(p.Args))    // free arguments stack space
+	p.F.Exec(m)               // eval the function
+	m.RA().(Applier).Apply(m) // apply function to arguments
+	m.Grow(-len(p.Args))      // free arguments stack space
 }
 
 type Applier interface {
@@ -62,7 +62,7 @@ type Const struct {
 }
 
 func (c Const) Exec(m *Machine) {
-	m.RA = c.v
+	m.SetRA(c.v)
 }
 
 func compileNum(n *ast.Num) Prog {

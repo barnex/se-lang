@@ -33,7 +33,7 @@ type Ident struct {
 func (n *Ident) PrintTo(w io.Writer) {
 	fmt.Fprint(w, n.Name)
 	if n.Object != nil {
-		fmt.Fprint(w, n.Object)
+		fmt.Fprint(w, ":", n.Object)
 	}
 }
 

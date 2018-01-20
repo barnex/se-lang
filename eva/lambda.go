@@ -32,7 +32,7 @@ func (p *Lambda) Exec(m *Machine) {
 	////fmt.Printf("lambda: eval: self=%#v\n", cpy)
 	//s.RA = &cpy
 
-	m.RA = p
+	m.SetRA(p)
 }
 
 func (p *Lambda) Apply(m *Machine) {

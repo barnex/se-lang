@@ -20,7 +20,7 @@ type Arg struct {
 var _ Var = (*Arg)(nil)
 
 func (a *Arg) Exec(m *Machine) {
-	m.RA = m.FromBP(-2 - a.Index)
+	m.SetRA(m.FromBP(-2 - a.Index))
 }
 
 func (a *Arg) String() string {

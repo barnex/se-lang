@@ -13,7 +13,7 @@ func Eval(p Prog) (Value, error) {
 	if len(m.s) != 0 {
 		return nil, fmt.Errorf("left dirty stack: %v", m.s)
 	}
-	return m.RA, nil
+	return m.RA(), nil
 }
 
 func Compile(src io.Reader) (Prog, error) {
