@@ -69,30 +69,34 @@ func resolveIdent(s Frames, id *ast.Ident) {
 
 func resolveLambda(s Frames, n *ast.Lambda) {
 	// first define the arguments
-	//for i, a := range n.Args {
-	//	a.Var = &Arg{Name: a.Name, Index: i}
-	//}
+	for i, a := range n.Args {
+		a.Object = &Arg{Index: i}
+	}
 
-	//// then resolve the body
-	//s.Push(n)
-	//resolve(s, n.Body)
-	//s.Pop()
+	// then resolve the body
+	s.Push(&LambdaFrame{n.Args})
+	resolve(s, n.Body)
+	s.Pop()
 }
 
-//func (n *Lambda) Find(name string) Var {
-//	for _, a := range n.Args {
-//		assert(a.Var != nil)
-//		if name == a.Name {
-//			return a.Var
-//		}
-//	}
-//	for _, a := range n.Caps {
-//		if name == a.Name {
-//			return a
-//		}
-//	}
-//	return nil // not found, maybe global
-//}
+type LambdaFrame struct {
+	Args []*ast.Ident
+}
+
+func (n *LambdaFrame) Find(name string) Var {
+	for _, a := range n.Args {
+		assert(a.Object != nil)
+		if name == a.Name {
+			return a.Object.(Var)
+		}
+	}
+	//for _, a := range n.Caps {
+	//	if name == a.Name {
+	//		return a
+	//	}
+	//}
+	return nil // not found, maybe global
+}
 
 // TODO: should not be method
 //func (n *Lambda) DoCapture(name string, v Var) {

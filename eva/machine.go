@@ -17,14 +17,9 @@ func (m *Machine) Push(v Value) {
 	m.s = append(m.s, v)
 }
 
-func (m *Machine) Pop(msg string) Value {
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Println("<-pop :", msg, ":", err)
-		}
-	}()
+func (m *Machine) Pop() Value {
 	v := m.s[len(m.s)-1]
-	fmt.Println("<-pop :", v, msg, "(len=", len(m.s), ")")
+	fmt.Println("pop", v)
 	m.s = m.s[:len(m.s)-1]
 	return v
 }
@@ -48,6 +43,14 @@ func (m *Machine) SetRA(v Value) {
 
 func (m *Machine) RA() Value {
 	return m.ra
+}
+
+func (m *Machine) BP() int {
+	return m.bp
+}
+
+func (m *Machine) SetBP(bp int) {
+	m.bp = bp
 }
 
 func (m *Machine) Grow(delta int) {
