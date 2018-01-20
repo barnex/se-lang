@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	se "github.com/barnex/se-lang"
 	"github.com/barnex/se-lang/ast"
 )
 
@@ -26,16 +25,22 @@ func Compile(src io.Reader) (Prog, error) {
 }
 
 func CompileAST(root ast.Node) (_ Prog, err error) {
-	defer func() {
-		switch e := recover().(type) {
-		case nil: //OK
-		default:
-			panic(e)
-		case se.Error:
-			err = e
-		}
-	}()
+	//defer func() {
+	//	switch e := recover().(type) {
+	//	case nil: //OK
+	//	default:
+	//		panic(e)
+	//	case se.Error:
+	//		err = e
+	//	}
+	//}()
 
 	Resolve(root)
 	return compileExpr(root), nil
+}
+
+func assert(x bool) {
+	if !x {
+		panic("assertion failed")
+	}
 }

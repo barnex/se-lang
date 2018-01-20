@@ -12,8 +12,8 @@ func (m *Machine) SP() int {
 	return len(m.s)
 }
 
-func (m *Machine) Push(v Value, msg string) {
-	fmt.Println("->push:", v, msg)
+func (m *Machine) Push(v Value) {
+	fmt.Println("push", v)
 	m.s = append(m.s, v)
 }
 
@@ -29,16 +29,15 @@ func (m *Machine) Pop(msg string) Value {
 	return v
 }
 
-func (m *Machine) FromBP(delta int, msg string) Value {
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Printf("fromebp %v: %v %v\n", delta, msg, err)
-			panic(err)
-		}
-	}()
-
+func (m *Machine) FromBP(delta int) Value {
 	v := m.s[m.BP+delta]
-	fmt.Printf("fromebp %v: %v %v\n", delta, v, msg)
+	fmt.Printf("fromBP %v=%v \n", delta, v)
+	return v
+}
+
+func (m *Machine) FromSP(delta int) Value {
+	v := m.s[m.SP()+delta]
+	fmt.Printf("fromSP %v=%v \n", delta, v)
 	return v
 }
 

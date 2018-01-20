@@ -10,19 +10,22 @@ import (
 // Var refers to the storage location of a variable,
 // so we can set or retreive the its value.
 type Var interface {
+	Prog
 }
 
 type Arg struct {
-	Name  string
 	Index int
 }
 
-func (l *Arg) String() string { return fmt.Sprint("$", l.Index) }
+var _ Var = (*Arg)(nil)
 
-var (
-	_ Var = (*Arg)(nil)
-	//_ Var = (*CaptVar)(nil)
-)
+func (a *Arg) Exec(m *Machine) {
+	m.RA = m.FromBP(-2 - a.Index)
+}
+
+func (a *Arg) String() string {
+	return fmt.Sprint("$", a.Index)
+}
 
 // A CaptVar refers to a captured variable:
 // a variable closed over by a closure.
@@ -49,9 +52,9 @@ func compileIdent(id *ast.Ident) Prog {
 	default:
 		panic(unhandled(n))
 	case nil:
-		panic(se.Errorf("undefined: %q", id.Name))
-	case *Arg:
-		return compileArg(n)
+		panic(se.Errorf("compileIdent: undefined: %q", id.Name))
+	case Prog:
+		return n
 	}
 }
 

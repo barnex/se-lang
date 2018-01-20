@@ -1,26 +1,40 @@
 package eva
 
-import "github.com/barnex/se-lang/ast"
+import (
+	"log"
+
+	"github.com/barnex/se-lang/ast"
+)
 
 func Resolve(n ast.Node) {
-	resolve(Frames{}, n)
+	resolve(Frames{prelude}, n)
 }
 
 func resolve(s Frames, n ast.Node) {
+	Log("resolve", n)
 	switch n := n.(type) {
 	case *ast.Call:
-		panic("TODO")
+		resolveCall(s, n)
 	case *ast.Ident:
 		resolveIdent(s, n)
 	case *ast.Lambda:
 		resolveLambda(s, n)
 	case *ast.Num:
+		// nothing to do
 	default:
 		panic(unhandled(n))
 	}
 }
 
+func resolveCall(s Frames, c *ast.Call) {
+	resolve(s, c.F)
+	for _, a := range c.Args {
+		resolve(s, a)
+	}
+}
+
 func resolveIdent(s Frames, id *ast.Ident) {
+	Log("resolveIdent", id)
 
 	// defScope: where ident was defined
 	// usingScope: where ident is being used:
@@ -28,28 +42,29 @@ func resolveIdent(s Frames, id *ast.Ident) {
 	// 		y ->
 	//  		x + y  // usingScope of x
 
-	//name := id.Name
-	//v, defScope := s.Find(name)
-	//if v == nil {
-	//	defScope = -1 // not found
-	//}
+	name := id.Name
+	v, defScope := s.Find(name)
+	if v == nil {
+		Log("resolveIdent: not found", id)
+		return
+	}
 
-	//switch {
-	//case defScope == -1: // not found
-	//	// leave open for now, compile will search for global
-	//case defScope == len(s)-1: // local variable
-	//	id.Object = v
-	//	//id.Parent = s[defScope]
-	//default: // captured variable
-	//	// loop over frames, capture from defscope+1 to last, capture all the way
-	//	for i := defScope + 1; i < len(s); i++ {
-	//		v := s[i-1].Find(name)
-	//		//s[i].(*Lambda).DoCapture(name, v)
-	//	}
-	//	v := s[len(s)-1].Find(name)
-	//	id.Object = v
-	//	//id.Parent = s[defScope]
-	//}
+	switch {
+	case defScope == -1: // not found
+		// leave open for now, compile will search for global
+	case defScope == len(s)-1: // directly under parent
+		id.Object = v
+		//id.Parent = s[defScope]
+		//default: // captured variable
+		//	// loop over frames, capture from defscope+1 to last, capture all the way
+		//	for i := defScope + 1; i < len(s); i++ {
+		//		v := s[i-1].Find(name)
+		//		//s[i].(*Lambda).DoCapture(name, v)
+		//	}
+		//	v := s[len(s)-1].Find(name)
+		//	id.Object = v
+		//	//id.Parent = s[defScope]
+	}
 }
 
 func resolveLambda(s Frames, n *ast.Lambda) {
@@ -117,7 +132,6 @@ func (s *Frames) Last() Frame {
 }
 
 func (f *Frames) Find(name string) (Var, int) {
-	//defer func() { log.Printf("find %q: %#v", name, v_) }()
 	s := *f
 	for i := len(s) - 1; i >= 0; i-- {
 		if v := s[i].Find(name); v != nil {
@@ -125,4 +139,9 @@ func (f *Frames) Find(name string) (Var, int) {
 		}
 	}
 	return nil, 0
+}
+
+func Log(action string, arg interface{}) {
+	log.SetFlags(0)
+	log.Printf("%s: %#v\n", action, arg)
 }
