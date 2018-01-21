@@ -210,17 +210,23 @@ func (p *parser) parseParenExpr() Node {
 // ------------------------------------------
 
 var precedence = map[lex.TType]int{
-	lex.TEq:  1,
-	lex.TGe:  1,
-	lex.TGt:  1,
-	lex.TLe:  1,
-	lex.TLt:  1,
-	lex.TNEq: 1,
+	lex.TMul: 5,
+	lex.TDiv: 5,
+	lex.TMod: 5,
 
-	lex.TAdd:   2,
-	lex.TMinus: 2,
-	lex.TMul:   3,
-	lex.TDiv:   3,
+	lex.TAdd:   4,
+	lex.TMinus: 4,
+
+	lex.TEq:  3,
+	lex.TGe:  3,
+	lex.TGt:  3,
+	lex.TLe:  3,
+	lex.TLt:  3,
+	lex.TNEq: 3,
+
+	lex.TAnd: 2,
+
+	lex.TOr: 1,
 }
 
 func opFunc(t lex.TType) string {
@@ -231,19 +237,24 @@ func opFunc(t lex.TType) string {
 }
 
 var opStr = map[lex.TType]string{
-	lex.TAdd: "add",
-	lex.TEq:  "eq",
-	lex.TGe:  "ge",
-	lex.TGt:  "gt",
-	lex.TLe:  "le",
-	lex.TLt:  "lt",
-	lex.TMul: "mul",
-	lex.TNEq: "neq",
+	lex.TAdd:   "add",
+	lex.TAnd:   "and",
+	lex.TEq:    "eq",
+	lex.TGe:    "ge",
+	lex.TGt:    "gt",
+	lex.TLe:    "le",
+	lex.TLt:    "lt",
+	lex.TMinus: "sub",
+	lex.TMod:   "mod",
+	lex.TMul:   "mul",
+	lex.TNEq:   "neq",
+	lex.TOr:    "or",
 }
 
 var isUnary = map[lex.TType]bool{
 	lex.TAdd:   true,
 	lex.TMinus: true,
+	lex.TNot:   true,
 }
 
 // ------------------------------------------

@@ -34,6 +34,21 @@ func TestEval(t *testing.T) {
 		{`1<=1`, true},
 		{`2<=1`, false},
 
+		// boolean
+		{`true`, true},
+		{`false`, false},
+		{`true && false`, false},
+		{`true && true`, true},
+		{`true || false`, true},
+		{`true || true`, true},
+		//{`!true`, false},
+		//{`!false`, true},
+
+		// precedence
+		{`true==false||false==false`, true},
+		{`1+1==2&&3<4`, true},
+		//{`1+2*3%4`, 3},
+
 		// lambda
 		{`(x->x)(1)`, 1.0},                         // identity function
 		{`(()->7)()`, 7.0},                         // constant function

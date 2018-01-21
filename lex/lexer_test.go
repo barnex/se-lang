@@ -44,6 +44,8 @@ func TestLex(t *testing.T) {
 		{`""`, []Token{{TString, `""`}}},
 		{`a+b*c`, []Token{{TIdent, "a"}, {TAdd, "+"}, {TIdent, "b"}, {TMul, "*"}, {TIdent, "c"}}},
 		{`a==b`, []Token{{TIdent, "a"}, {TEq, "=="}, {TIdent, "b"}}},
+		{`%`, []Token{{TMod, "%"}}},
+		{`a&&b||!c`, []Token{{TIdent, "a"}, {TAnd, "&&"}, {TIdent, "b"}, {TOr, "||"}, {TNot, "!"}, {TIdent, "c"}}},
 		{`'x`, []Token{{TQuote, "'"}, {TIdent, "x"}}},
 	}
 

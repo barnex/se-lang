@@ -15,6 +15,7 @@ func TestParseExpr(t *testing.T) {
 		mul = ident("mul")
 		neg = ident("neg")
 		one = num(1)
+		sub = ident("sub")
 		x   = ident("x")
 		y   = ident("y")
 		z   = ident("z")
@@ -56,6 +57,8 @@ func TestParseExpr(t *testing.T) {
 		{`1*2<=3`, call(ident("le"), call(mul, num(1), num(2)), num(3))},
 		{`1*2==3`, call(ident("eq"), call(mul, num(1), num(2)), num(3))},
 		{`1*2!=3`, call(ident("neq"), call(mul, num(1), num(2)), num(3))},
+		{`2-1`, call(sub, num(2), num(1))},
+		//{`3%4`, call(ident("mod"), num(3), num(4))},
 
 		// random
 		{`(f)(x)`, call(f, x)},

@@ -44,6 +44,8 @@ func (l *Lexer) Next() Token {
 		ttype = TNum
 	case scanner.String:
 		ttype = TString
+	case '%':
+		ttype = TMod
 	case '(':
 		ttype = TLParen
 	case ')':
@@ -70,16 +72,20 @@ func (l *Lexer) Next() Token {
 	// symbols that require peeking
 	peek := s.Peek()
 	switch {
-	case tok == '-' && peek == '>':
-		ttype = TLambda
-	case tok == '=' && peek == '=':
-		ttype = TEq
 	case tok == '!' && peek == '=':
 		ttype = TNEq
+	case tok == '&' && peek == '&':
+		ttype = TAnd
+	case tok == '-' && peek == '>':
+		ttype = TLambda
 	case tok == '<' && peek == '=':
 		ttype = TLe
+	case tok == '=' && peek == '=':
+		ttype = TEq
 	case tok == '>' && peek == '=':
 		ttype = TGe
+	case tok == '|' && peek == '|':
+		ttype = TOr
 	}
 	if ttype != 0 {
 		s.Scan()
@@ -88,12 +94,14 @@ func (l *Lexer) Next() Token {
 
 	// no peeked symbol was accepted
 	switch {
+	case tok == '!':
+		ttype = TNot
 	case tok == '-':
 		ttype = TMinus
-	case tok == '=':
-		ttype = TAssign
 	case tok == '<':
 		ttype = TLt
+	case tok == '=':
+		ttype = TAssign
 	case tok == '>':
 		ttype = TGt
 	}

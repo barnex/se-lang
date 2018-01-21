@@ -2,12 +2,10 @@ package ast
 
 import (
 	"fmt"
-	"log"
 )
 
 func Resolve(n Node) {
 	resolve(Frames{}, n)
-	fmt.Println("*** resolved:", ToString(n))
 }
 
 func resolve(s Frames, n Node) {
@@ -153,8 +151,8 @@ func (f *Frames) Find(name string) (Var, int) {
 }
 
 func Log(action string, arg interface{}) {
-	log.SetFlags(0)
-	log.Printf("%s: %#v\n", action, arg)
+	//log.SetFlags(0)
+	//log.Printf("%s: %#v\n", action, arg)
 }
 
 func unhandled(x interface{}) string {

@@ -26,12 +26,12 @@ type TType int
 const (
 	TError  TType = iota
 	TAdd          // +
+	TAnd          // &&
 	TAssign       // =
 	TComma        // ,
 	TDiv          // /
 	TEOF          // end-of-file
 	TEq           // ==
-	TNEq          // !=
 	TGe           // >=
 	TGt           // >
 	TIdent        // identifer
@@ -41,8 +41,12 @@ const (
 	TLe           // <=
 	TLt           // <
 	TMinus        // -
+	TMod          // %
 	TMul          // *
+	TNEq          // !=
+	TNot          // !
 	TNum          // number
+	TOr           // ||
 	TQuote        // '
 	TRBrace       // }
 	TRParen       // )
@@ -51,6 +55,7 @@ const (
 
 var ttypeString = map[TType]string{
 	TAdd:    "+",
+	TAnd:    "&&",
 	TAssign: "=",
 	TComma:  ",",
 	TDiv:    "/",
@@ -65,9 +70,12 @@ var ttypeString = map[TType]string{
 	TLe:     "<=",
 	TLt:     "<",
 	TMinus:  "-",
+	TMod:    "%",
 	TMul:    "*",
 	TNEq:    "!=",
+	TNot:    "!",
 	TNum:    "number",
+	TOr:     "||",
 	TQuote:  "'",
 	TRBrace: "}",
 	TRParen: ")",
