@@ -24,13 +24,14 @@ func (t Token) String() string {
 type TType int
 
 const (
-	tError  TType = iota
+	TError  TType = iota
 	TAdd          // +
 	TAssign       // =
 	TComma        // ,
 	TDiv          // /
 	TEOF          // end-of-file
-	TEquals       // ==
+	TEq           // ==
+	TNEq          // !=
 	TGe           // >=
 	TGt           // >
 	TIdent        // identifer
@@ -54,7 +55,7 @@ var ttypeString = map[TType]string{
 	TComma:  ",",
 	TDiv:    "/",
 	TEOF:    "EOF",
-	TEquals: "==",
+	TEq:     "==",
 	TGe:     ">=",
 	TGt:     ">",
 	TIdent:  "identifer",
@@ -65,6 +66,7 @@ var ttypeString = map[TType]string{
 	TLt:     "<",
 	TMinus:  "-",
 	TMul:    "*",
+	TNEq:    "!=",
 	TNum:    "number",
 	TQuote:  "'",
 	TRBrace: "}",

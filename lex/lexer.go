@@ -73,7 +73,9 @@ func (l *Lexer) Next() Token {
 	case tok == '-' && peek == '>':
 		ttype = TLambda
 	case tok == '=' && peek == '=':
-		ttype = TEquals
+		ttype = TEq
+	case tok == '!' && peek == '=':
+		ttype = TNEq
 	case tok == '<' && peek == '=':
 		ttype = TLe
 	case tok == '>' && peek == '=':

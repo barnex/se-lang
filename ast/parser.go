@@ -210,22 +210,35 @@ func (p *parser) parseParenExpr() Node {
 // ------------------------------------------
 
 var precedence = map[lex.TType]int{
-	lex.TAdd:   1,
-	lex.TMinus: 1,
-	lex.TMul:   2,
-	lex.TDiv:   2,
+	lex.TEq:  1,
+	lex.TGe:  1,
+	lex.TGt:  1,
+	lex.TLe:  1,
+	lex.TLt:  1,
+	lex.TNEq: 1,
+
+	lex.TAdd:   2,
+	lex.TMinus: 2,
+	lex.TMul:   3,
+	lex.TDiv:   3,
 }
 
 func opFunc(t lex.TType) string {
-	if f, ok := opfunc[t]; ok {
+	if f, ok := opStr[t]; ok {
 		return f
 	}
 	panic(fmt.Sprintf("bug: bad operator: %v", t))
 }
 
-var opfunc = map[lex.TType]string{
+var opStr = map[lex.TType]string{
 	lex.TAdd: "add",
+	lex.TEq:  "eq",
+	lex.TGe:  "ge",
+	lex.TGt:  "gt",
+	lex.TLe:  "le",
+	lex.TLt:  "lt",
 	lex.TMul: "mul",
+	lex.TNEq: "neq",
 }
 
 var isUnary = map[lex.TType]bool{

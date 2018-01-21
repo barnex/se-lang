@@ -18,7 +18,8 @@ func TestLex(t *testing.T) {
 		{"+", []Token{{TAdd, "+"}}},
 		{"=", []Token{{TAssign, "="}}},
 		{"/", []Token{{TDiv, "/"}}},
-		{"==", []Token{{TEquals, "=="}}},
+		{"==", []Token{{TEq, "=="}}},
+		{"!=", []Token{{TNEq, "!="}}},
 		{"123.4", []Token{{TNum, "123.4"}}},
 		{">=", []Token{{TGe, ">="}}},
 		{">", []Token{{TGt, ">"}}},
@@ -42,7 +43,7 @@ func TestLex(t *testing.T) {
 		{` " a 1 () "`, []Token{{TString, `" a 1 () "`}}},
 		{`""`, []Token{{TString, `""`}}},
 		{`a+b*c`, []Token{{TIdent, "a"}, {TAdd, "+"}, {TIdent, "b"}, {TMul, "*"}, {TIdent, "c"}}},
-		{`a==b`, []Token{{TIdent, "a"}, {TEquals, "=="}, {TIdent, "b"}}},
+		{`a==b`, []Token{{TIdent, "a"}, {TEq, "=="}, {TIdent, "b"}}},
 		{`'x`, []Token{{TQuote, "'"}, {TIdent, "x"}}},
 	}
 

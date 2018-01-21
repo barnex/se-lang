@@ -30,20 +30,32 @@ func TestParseExpr(t *testing.T) {
 		{`-1`, call(neg, one)},
 		{`-f`, call(neg, f)},
 		{`-(f)`, call(neg, f)},
+
 		//  | num
 		{`1`, one},
+
 		//  | ident
 		{`f`, f},
+
 		//  | ( expr )
 		{`(-1)`, call(neg, num(1))},
 		{`(1)`, num(1)},
 		{`(f)`, f},
 		{`((f))`, f},
+
 		//  | operand *(list)
 		{`f()`, call(f)},
 		{`f(x)`, call(f, x)},
 		{`f(x,y,z)`, call(f, x, y, z)},
 		{`(f)(x,y,z)()`, call(call(f, x, y, z))},
+
+		// binary
+		{`1*2>3`, call(ident("gt"), call(mul, num(1), num(2)), num(3))},
+		{`1*2<3`, call(ident("lt"), call(mul, num(1), num(2)), num(3))},
+		{`1*2>=3`, call(ident("ge"), call(mul, num(1), num(2)), num(3))},
+		{`1*2<=3`, call(ident("le"), call(mul, num(1), num(2)), num(3))},
+		{`1*2==3`, call(ident("eq"), call(mul, num(1), num(2)), num(3))},
+		{`1*2!=3`, call(ident("neq"), call(mul, num(1), num(2)), num(3))},
 
 		// random
 		{`(f)(x)`, call(f, x)},
