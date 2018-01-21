@@ -35,7 +35,7 @@ func CompileAST(root ast.Node) (_ Prog, err error) {
 	//	}
 	//}()
 
-	Resolve(root)
+	ast.Resolve(root)
 	return compileExpr(root), nil
 }
 

@@ -7,7 +7,7 @@ var prelude = pkg{
 
 type pkg map[string]Prog
 
-func (p pkg) Find(name string) Var {
+func (p pkg) Find(name string) Prog {
 	return p[name]
 }
 

@@ -1,34 +1,32 @@
-package eva
+package ast
 
 import (
 	"fmt"
 	"log"
-
-	"github.com/barnex/se-lang/ast"
 )
 
-func Resolve(n ast.Node) {
-	resolve(Frames{prelude}, n)
-	fmt.Println("*** resolved:", ast.ToString(n))
+func Resolve(n Node) {
+	resolve(Frames{}, n)
+	fmt.Println("*** resolved:", ToString(n))
 }
 
-func resolve(s Frames, n ast.Node) {
+func resolve(s Frames, n Node) {
 	Log("resolve", n)
 	switch n := n.(type) {
-	case *ast.Call:
+	case *Call:
 		resolveCall(s, n)
-	case *ast.Ident:
+	case *Ident:
 		resolveIdent(s, n)
-	case *ast.Lambda:
+	case *Lambda:
 		resolveLambda(s, n)
-	case *ast.Num:
+	case *Num:
 		// nothing to do
 	default:
 		panic(unhandled(n))
 	}
 }
 
-func resolveCall(s Frames, c *ast.Call) {
+func resolveCall(s Frames, c *Call) {
 	Log("resolveCall", c)
 	resolve(s, c.F)
 	for _, a := range c.Args {
@@ -36,7 +34,7 @@ func resolveCall(s Frames, c *ast.Call) {
 	}
 }
 
-func resolveIdent(s Frames, id *ast.Ident) {
+func resolveIdent(s Frames, id *Ident) {
 	Log("resolveIdent", id)
 
 	// defScope: where ident was defined
@@ -57,8 +55,8 @@ func resolveIdent(s Frames, id *ast.Ident) {
 		// leave open for now, compile will search for global
 	case defScope == len(s)-1: // directly under parent
 		id.Var = v
-	case defScope == 0: // global
-		id.Var = v
+	//case defScope == 0: // global
+	//	id.Var = v
 	default: // captured variable
 		// loop over frames, capture from defscope+1 to last, capture all the way
 		for i := defScope + 1; i < len(s); i++ {
@@ -71,7 +69,7 @@ func resolveIdent(s Frames, id *ast.Ident) {
 	}
 }
 
-func resolveLambda(s Frames, n *ast.Lambda) {
+func resolveLambda(s Frames, n *Lambda) {
 	Log("resolveLambda", n)
 	// first define the arguments
 	for i, a := range n.Args {
@@ -86,7 +84,7 @@ func resolveLambda(s Frames, n *ast.Lambda) {
 }
 
 type LambdaFrame struct {
-	*ast.Lambda
+	*Lambda
 }
 
 func (n LambdaFrame) Find(name string) Var {
@@ -112,7 +110,7 @@ func (n LambdaFrame) DoCapture(name string, v Var) {
 	if v := n.Find(name); v != nil {
 		return // already captured
 	}
-	c := ast.Capture{
+	c := Capture{
 		Name: name,
 		Src:  v,
 		Dst:  &LocVar{len(n.Caps)},
@@ -157,4 +155,14 @@ func (f *Frames) Find(name string) (Var, int) {
 func Log(action string, arg interface{}) {
 	log.SetFlags(0)
 	log.Printf("%s: %#v\n", action, arg)
+}
+
+func unhandled(x interface{}) string {
+	return fmt.Sprintf("BUG: unhandled case: %T", x)
+}
+
+func assert(x bool) {
+	if !x {
+		panic("assertion failed")
+	}
 }

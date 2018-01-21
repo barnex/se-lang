@@ -41,13 +41,9 @@ func compileLambda(n *ast.Lambda) Prog {
 }
 
 type Lambda struct {
-	Caps []Capture
+	Caps []ast.Capture
 	Capv []Value
 	Body Prog
-}
-
-type Capture struct {
-	Src, Dst Var
 }
 
 var _ Applier = (*Lambda)(nil)
@@ -126,9 +122,13 @@ func compileIdent(id *ast.Ident) Prog {
 	default:
 		panic(unhandled(n))
 	case nil:
-		panic(se.Errorf("compileIdent: undefined: %q: %#v", id.Name, id))
-	case Prog:
-		return n
+		p := prelude.Find(id.Name)
+		if p == nil {
+			panic(se.Errorf("compileIdent: undefined: %q: %#v", id.Name, id))
+		}
+		return p
+		//case Prog:
+		//	return n
 	}
 }
 
