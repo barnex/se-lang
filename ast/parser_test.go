@@ -31,6 +31,7 @@ func TestParseExpr(t *testing.T) {
 		{`-1`, call(neg, one)},
 		{`-f`, call(neg, f)},
 		{`-(f)`, call(neg, f)},
+		{`!x`, call(ident("not"), x)},
 
 		//  | num
 		{`1`, one},

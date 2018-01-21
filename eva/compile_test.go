@@ -17,6 +17,8 @@ func TestEval(t *testing.T) {
 		{`(1+2)+(3+4)`, 10.0},
 		{`1*2*3*4`, 24.0},
 		{`(1*2)*(3*4)`, 24.0},
+		{`-1`, -1.0},
+		{`2-1`, 1.0},
 
 		// comparison
 		{`1==1`, true},
@@ -41,8 +43,8 @@ func TestEval(t *testing.T) {
 		{`true && true`, true},
 		{`true || false`, true},
 		{`true || true`, true},
-		//{`!true`, false},
-		//{`!false`, true},
+		{`!true`, false},
+		{`!false`, true},
 
 		// precedence
 		{`true==false||false==false`, true},
@@ -52,6 +54,7 @@ func TestEval(t *testing.T) {
 		// lambda
 		{`(x->x)(1)`, 1.0},                         // identity function
 		{`(()->7)()`, 7.0},                         // constant function
+		{`(x->-x)(1)`, -1.0},                       // lambda: negative
 		{`(x->x*x)(3)`, 9.0},                       // lambda: square
 		{`(x->x+x)(3)`, 6.0},                       // lambda: double
 		{`((x,y)->x+y)(1,2)`, 3.0},                 // lambda: sum
@@ -69,7 +72,8 @@ func TestEval(t *testing.T) {
 	for _, c := range cases {
 		prog, err := Compile(strings.NewReader(c.src))
 		if err != nil || prog == nil {
-			t.Fatalf("%v: have %v, %v", c.src, prog, err)
+			t.Errorf("%v: have %v, %v", c.src, prog, err)
+			continue
 		}
 		if have, err := Eval(prog); err != nil || have != c.want {
 			t.Errorf("%v: have %v, %v, want: %v", c.src, have, err, c.want)

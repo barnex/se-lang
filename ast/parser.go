@@ -141,6 +141,11 @@ func (p *parser) parseOperand() Node {
 		return &Call{&Ident{Name: "neg"}, []Node{p.parseOperand()}}
 	}
 
+	// !operand
+	if p.Accept(lex.TNot) {
+		return &Call{&Ident{Name: "not"}, []Node{p.parseOperand()}}
+	}
+
 	// num, ident, parenexpr
 	var expr Node
 	switch p.PeekTT() {
