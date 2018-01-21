@@ -19,10 +19,30 @@ func resolve(s Frames, n Node) {
 		resolveLambda(s, n)
 	case *Num:
 		// nothing to do
+	case *Block:
+		resolveBlock(s, n)
 	default:
 		panic(unhandled(n))
 	}
 }
+
+func resolveBlock(s Frames, b *Block) {
+	panic("todo")
+	//s.Push(b)
+	//defer s.Pop()
+
+	//for _, stmt := range b.Stmts {
+	//	if a, ok := stmt.(*Assign); ok {
+	//		resolve(s, a.RHS)
+	//	} else {
+	//		resolve(s, stmt)
+	//	}
+	//}
+}
+
+//func (b*Block) Find() Var{
+//
+//}
 
 func resolveCall(s Frames, c *Call) {
 	Log("resolveCall", c)
@@ -77,8 +97,8 @@ func resolveLambda(s Frames, n *Lambda) {
 	// then resolve the body
 	f := LambdaFrame{n}
 	s.Push(f)
+	defer s.Pop()
 	resolve(s, n.Body)
-	s.Pop()
 }
 
 type LambdaFrame struct {
@@ -114,7 +134,7 @@ func (n LambdaFrame) DoCapture(name string, v Var) {
 		Dst:  &LocVar{len(n.Caps)},
 	}
 	n.Caps = append(n.Caps, c)
-	fmt.Println("lambdaframe: docapture:", c)
+	Log("lambdaframe: docapture:", c)
 }
 
 type Frame interface {

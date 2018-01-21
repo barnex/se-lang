@@ -51,6 +51,7 @@ func (p *parser) parse() Node {
 // expr:
 // 	| expr1
 //  | lambda
+//  | block
 func (p *parser) parseExpr() Node {
 	// peek for lambda: "()" or "(ident," or "ident->" or "(ident)->"
 	if p.HasPeek(lex.TLParen, lex.TRParen) ||
@@ -58,9 +59,46 @@ func (p *parser) parseExpr() Node {
 		p.HasPeek(lex.TIdent, lex.TLambda) ||
 		p.HasPeek(lex.TLParen, lex.TIdent, lex.TRParen, lex.TLambda) {
 		return p.parseLambda()
-	} else {
-		return p.parseExpr1()
 	}
+
+	if p.HasPeek(lex.TLBrace) {
+		return p.parseBlock()
+	}
+
+	return p.parseExpr1()
+}
+
+// block:
+//  | { stmt; ... }
+func (p *parser) parseBlock() Node {
+	p.Expect(lex.TLBrace)
+	stmt := []Node{p.parseStmt()}
+
+	for p.Accept(lex.TSemicol) {
+		stmt = append(stmt, p.parseStmt())
+	}
+	p.Expect(lex.TRBrace)
+	return &Block{stmt}
+}
+
+// stmt:
+// 	| expr
+//  | assign
+func (p *parser) parseStmt() Node {
+	if p.HasPeek(lex.TIdent, lex.TAssign) {
+		return p.parseAssign()
+	} else {
+		return p.parseExpr()
+	}
+}
+
+// assign:
+//  | ident = expr
+func (p *parser) parseAssign() Node {
+	lhs := p.parseIdent()
+	p.Expect(lex.TAssign)
+	rhs := p.parseExpr()
+	return &Assign{lhs, rhs}
 }
 
 // lambda:

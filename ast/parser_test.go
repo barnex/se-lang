@@ -75,6 +75,11 @@ func TestParseExpr(t *testing.T) {
 		{`(x,y)->f(y,x)`, lambda(args(x, y), call(f, y, x))},
 		{`(x,y)->f(y,x)()`, lambda(args(x, y), call(call(f, y, x)))},
 		{`((x,y)->y+x)()`, call(lambda(args(x, y), call(add, y, x)))},
+
+		// block
+		{`{x}`, block(x)},
+		{`{x=1}`, block(assign(x, num(1)))},
+		{`{x=1;x}`, block(assign(x, num(1)), x)},
 	}
 
 	for i, c := range cases {
@@ -178,6 +183,8 @@ func ident(n string) *Ident                { return &Ident{Name: n} }
 func call(f Node, args ...Node) Node       { return &Call{f, normalize(args)} }
 func lambda(args []*Ident, body Node) Node { return &Lambda{Args: args, Body: body} }
 func args(n ...*Ident) []*Ident            { return n }
+func block(n ...Node) *Block               { return &Block{Stmts: n} }
+func assign(lhs *Ident, rhs Node) Node     { return &Assign{lhs, rhs} }
 
 func normalize(x []Node) []Node {
 	if x == nil {

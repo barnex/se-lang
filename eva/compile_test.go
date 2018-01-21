@@ -67,6 +67,9 @@ func TestEval(t *testing.T) {
 		{`(x->()->x)(1)()`, 1.0},
 		{`(x->y->x+y)(1)(2)`, 3.0},         // close over parent
 		{`(x->y->z->x+y+z)(1)(2)(3)`, 6.0}, // transitive
+
+		// block, assign
+		//{`{x=2+3;x*x}`, 25.0},
 	}
 
 	for _, c := range cases {
