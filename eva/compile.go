@@ -29,43 +29,37 @@ func compileExpr(n ast.Node) Prog {
 // -------- Lambda
 
 func compileLambda(n *ast.Lambda) Prog {
-	p := &Lambda{
+	p := &LambdaProg{
 		Body: compileExpr(n.Body),
 	}
-	//p.Caps = make([]Capture, len(n.Caps))
-	//for i := range p.Caps {
-	//	p.Caps[i].Src = compileVar(n.Caps[i].Src)
-	//	p.Caps[i].Dst = compileVar(n.Caps[i].Dst)
-	//}
+	for _, c := range n.Caps {
+		p.Caps = append(p.Caps, compileVar(c.Src))
+	}
 	return p
 }
 
-type Lambda struct {
-	Caps []ast.Capture
+type LambdaProg struct {
+	Caps []Prog
+	Body Prog
+}
+
+func (p *LambdaProg) Exec(m *Machine) {
+	v := LambdaValue{Body: p.Body}
+	for _, c := range p.Caps {
+		c.Exec(m)
+		v.Capv = append(v.Capv, m.RA())
+	}
+	m.SetRA(&v)
+}
+
+type LambdaValue struct {
 	Capv []Value
 	Body Prog
 }
 
-var _ Applier = (*Lambda)(nil)
+var _ Applier = (*LambdaValue)(nil)
 
-func (p_ *Lambda) Exec(m *Machine) {
-	p := *p_
-	// TODO: push captures
-	//p.Capv = make([]Value, len(p.Caps))
-	//for i := range p.Caps {
-	//	p.Caps[i].Exec(m)
-	//	//g
-	//}
-	m.SetRA(&p)
-}
-
-func (p *Lambda) Apply(m *Machine) {
-	//m.Grow(len(p.Caps))
-	//for i := range p.Caps {
-	//	//m.s[m.BP+p.NArgs+i] = p.Caps[i]
-	//	m.Push(p.Caps[i], "arg") // todo reverse order
-	//}
-
+func (p *LambdaValue) Apply(m *Machine) {
 	m.Push(m.BP())
 	m.SetBP(m.SP())
 	for _, c := range p.Capv {
@@ -74,15 +68,6 @@ func (p *Lambda) Apply(m *Machine) {
 	p.Body.Exec(m)
 	m.Grow(-len(p.Capv))
 	m.SetBP(m.Pop().(int))
-
-	//if len(p.NCaps) > 0 {
-	//	// free captures
-	//	ret := m.Pop("lambda:sub-ret")
-	//	for i := len(p.NCaps) - 1; i >= 0; i-- {
-	//		m.Pop("lambda:free-cap")
-	//	}
-	//	m.Push(ret, "lambda:return")
-	//}
 }
 
 // -------- Call
@@ -118,18 +103,48 @@ type Applier interface {
 // -------- Ident
 
 func compileIdent(id *ast.Ident) Prog {
-	switch n := id.Var.(type) {
-	default:
-		panic(unhandled(n))
-	case nil:
-		p := prelude.Find(id.Name)
-		if p == nil {
-			panic(se.Errorf("compileIdent: undefined: %q: %#v", id.Name, id))
-		}
-		return p
-		//case Prog:
-		//	return n
+	if id.Var == nil {
+		return compileGlobal(id)
+	} else {
+		return compileVar(id.Var)
 	}
+}
+
+func compileGlobal(id *ast.Ident) Prog {
+	p := prelude.Find(id.Name)
+	if p == nil {
+		panic(se.Errorf("compileIdent: undefined: %q: %#v", id.Name, id))
+	}
+	return p
+}
+
+func compileVar(v ast.Var) Prog {
+	switch v := v.(type) {
+	default:
+		panic(unhandled(v))
+	case nil:
+		panic(unhandled(v))
+	case *ast.Arg:
+		return compileArg(v)
+	case *ast.LocVar:
+		return compileLocVar(v)
+	}
+}
+
+func compileArg(a *ast.Arg) Prog {
+	return fromBP{Offset: -2 - a.Index}
+}
+
+func compileLocVar(a *ast.LocVar) Prog {
+	return fromBP{Offset: a.Index}
+}
+
+type fromBP struct {
+	Offset int
+}
+
+func (p fromBP) Exec(m *Machine) {
+	m.SetRA(m.FromBP(p.Offset))
 }
 
 // -------- Const

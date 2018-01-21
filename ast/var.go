@@ -55,10 +55,6 @@ func (l *LocVar) String() string {
 //	variable()
 //}
 
-//func (a *Arg) Exec(m *Machine) {
-//	m.SetRA(m.FromBP(-2 - a.Index))
-//}
-
 //func (l *LocVar) Exec(m *Machine) {
 //	m.SetRA(m.FromBP(l.Index))
 //}
