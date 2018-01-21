@@ -48,8 +48,6 @@ func (n *Call) PrintTo(w io.Writer) {
 	printList(w, n.Args)
 }
 
-type Var interface{}
-
 // Lambda is a lambda expression node, e.g.: 'x->x*x'
 type Lambda struct {
 	Args []*Ident

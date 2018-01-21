@@ -1,32 +1,16 @@
-package eva
+package ast
 
 import (
 	"fmt"
-
-	"github.com/barnex/se-lang/ast"
 )
-
-func compileVar(n ast.Var) Prog {
-	switch n := n.(type) {
-	default:
-		panic(unhandled(n))
-	}
-}
 
 // Var refers to the storage location of a variable,
 // so we can set or retreive the its value.
 type Var interface {
-	Prog
 }
 
 type Arg struct {
 	Index int
-}
-
-var _ Var = (*Arg)(nil)
-
-func (a *Arg) Exec(m *Machine) {
-	m.SetRA(m.FromBP(-2 - a.Index))
 }
 
 func (a *Arg) String() string {
@@ -41,11 +25,7 @@ func (l *LocVar) String() string {
 	return fmt.Sprint("L", l.Index)
 }
 
-func (l *LocVar) Exec(m *Machine) {
-	m.SetRA(m.FromBP(l.Index))
-}
-
-//func compileGlobal(id *ast.Ident) Prog {
+//func compileGlobal(id *Ident) Prog {
 //	assert(id.Var == nil)
 //	v, ok := prelude[id.Name]
 //	if !ok {
@@ -73,4 +53,12 @@ func (l *LocVar) Exec(m *Machine) {
 //
 //type Var interface {
 //	variable()
+//}
+
+//func (a *Arg) Exec(m *Machine) {
+//	m.SetRA(m.FromBP(-2 - a.Index))
+//}
+
+//func (l *LocVar) Exec(m *Machine) {
+//	m.SetRA(m.FromBP(l.Index))
 //}
