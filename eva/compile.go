@@ -21,16 +21,68 @@ func compileExpr(n ast.Node) Prog {
 		return compileIdent(n)
 	case *ast.Lambda:
 		return compileLambda(n)
+	case *ast.Block:
+		return compileBlock(n)
 	case *ast.Num:
 		return compileNum(n)
 	}
+}
+
+// -------- Block
+
+func compileBlock(n *ast.Block) Prog {
+	b := &Block{}
+	for _, stmt := range n.Stmts {
+		if a, ok := stmt.(*ast.Assign); ok {
+			b.Init = append(b.Init, compileAssign(a))
+		} else {
+			if b.Expr != nil {
+				panic(se.Errorf("block has more than 1 expression"))
+			}
+			b.Expr = compileExpr(stmt)
+		}
+	}
+	if b.Expr == nil {
+		panic(se.Errorf("block has no expression"))
+	}
+	return b
+}
+
+type Block struct {
+	Init []Assign
+	Expr Prog
+}
+
+func (b *Block) Exec(m *Machine) {
+	for _, ini := range b.Init {
+		ini.Exec(m)
+	}
+	b.Expr.Exec(m)
+}
+
+type Assign struct {
+	LHS fromBP
+	RHS Prog
+}
+
+func compileAssign(n *ast.Assign) Assign {
+	return Assign{
+		LHS: compileLocVar(n.LHS.Var.(*ast.LocVar)),
+		RHS: compileExpr(n.RHS),
+	}
+}
+
+func (a Assign) Exec(m *Machine) {
+	a.RHS.Exec(m)
+	a.LHS.SetToRA(m)
 }
 
 // -------- Lambda
 
 func compileLambda(n *ast.Lambda) Prog {
 	p := &LambdaProg{
-		Body: compileExpr(n.Body),
+		Body:      compileExpr(n.Body),
+		NumLocals: n.NumVar,
 	}
 	for _, c := range n.Caps {
 		p.Caps = append(p.Caps, compileVar(c.Src))
@@ -39,12 +91,13 @@ func compileLambda(n *ast.Lambda) Prog {
 }
 
 type LambdaProg struct {
-	Caps []Prog
-	Body Prog
+	Caps      []Prog
+	Body      Prog
+	NumLocals int
 }
 
 func (p *LambdaProg) Exec(m *Machine) {
-	v := LambdaValue{Body: p.Body}
+	v := LambdaValue{Body: p.Body, NumLocals: p.NumLocals}
 	for _, c := range p.Caps {
 		c.Exec(m)
 		v.Capv = append(v.Capv, m.RA())
@@ -53,8 +106,9 @@ func (p *LambdaProg) Exec(m *Machine) {
 }
 
 type LambdaValue struct {
-	Capv []Value
-	Body Prog
+	Capv      []Value
+	Body      Prog
+	NumLocals int
 }
 
 var _ Applier = (*LambdaValue)(nil)
@@ -62,11 +116,12 @@ var _ Applier = (*LambdaValue)(nil)
 func (p *LambdaValue) Apply(m *Machine) {
 	m.Push(m.BP())
 	m.SetBP(m.SP())
-	for _, c := range p.Capv {
-		m.Push(c)
+	m.Grow(p.NumLocals)
+	for i, c := range p.Capv {
+		m.SetFromBP(i, c)
 	}
 	p.Body.Exec(m)
-	m.Grow(-len(p.Capv))
+	m.Grow(-p.NumLocals)
 	m.SetBP(m.Pop().(int))
 }
 
@@ -135,7 +190,7 @@ func compileArg(a *ast.Arg) Prog {
 	return fromBP{Offset: -2 - a.Index}
 }
 
-func compileLocVar(a *ast.LocVar) Prog {
+func compileLocVar(a *ast.LocVar) fromBP {
 	return fromBP{Offset: a.Index}
 }
 
@@ -145,6 +200,10 @@ type fromBP struct {
 
 func (p fromBP) Exec(m *Machine) {
 	m.SetRA(m.FromBP(p.Offset))
+}
+
+func (p fromBP) SetToRA(m *Machine) {
+	m.SetFromBP(p.Offset, m.RA())
 }
 
 // -------- Const
