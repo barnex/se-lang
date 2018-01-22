@@ -27,22 +27,46 @@ func resolve(s Frames, n Node) {
 }
 
 func resolveBlock(s Frames, b *Block) {
-	panic("todo")
-	//s.Push(b)
-	//defer s.Pop()
+	s.Push(b)
+	defer s.Pop()
 
-	//for _, stmt := range b.Stmts {
-	//	if a, ok := stmt.(*Assign); ok {
-	//		resolve(s, a.RHS)
-	//	} else {
-	//		resolve(s, stmt)
-	//	}
-	//}
+	for _, stmt := range b.Stmts {
+		if a, ok := stmt.(*Assign); ok {
+			a.LHS.Var = parentFrame(s).NewVariable()
+		}
+	}
+
+	for _, stmt := range b.Stmts {
+		if a, ok := stmt.(*Assign); ok {
+			resolve(s, a.RHS)
+		} else {
+			resolve(s, stmt)
+		}
+	}
 }
 
-//func (b*Block) Find() Var{
-//
-//}
+func (b *Block) Find(name string) Var {
+	for _, stmt := range b.Stmts {
+		if a, ok := stmt.(*Assign); ok {
+			if a.LHS.Name == name {
+				return a.LHS.Var
+			}
+		}
+	}
+	return nil
+}
+
+func parentFrame(s Frames) *Lambda {
+	if len(s) < 2 {
+		panic("no parent frame")
+	}
+	for i := len(s) - 2; i >= 0; i-- {
+		if l, ok := s[i].(*Lambda); ok {
+			return l
+		}
+	}
+	panic("no parent frame")
+}
 
 func resolveCall(s Frames, c *Call) {
 	Log("resolveCall", c)
@@ -78,8 +102,10 @@ func resolveIdent(s Frames, id *Ident) {
 	default: // captured variable
 		// loop over frames, capture from defscope+1 to last, capture all the way
 		for i := defScope + 1; i < len(s); i++ {
-			v := s[i-1].Find(name)
-			s[i].(LambdaFrame).DoCapture(name, v)
+			if l, ok := s[i].(*Lambda); ok {
+				v := s[i-1].Find(name)
+				l.DoCapture(name, v)
+			}
 		}
 		v := s[len(s)-1].Find(name)
 		assert(v != nil)
@@ -95,17 +121,12 @@ func resolveLambda(s Frames, n *Lambda) {
 	}
 
 	// then resolve the body
-	f := LambdaFrame{n}
-	s.Push(f)
+	s.Push(n)
 	defer s.Pop()
 	resolve(s, n.Body)
 }
 
-type LambdaFrame struct {
-	*Lambda
-}
-
-func (n LambdaFrame) Find(name string) Var {
+func (n *Lambda) Find(name string) Var {
 	Log("lambdaframe: find", name)
 	for _, a := range n.Args {
 		if name == a.Name {
@@ -124,14 +145,14 @@ func (n LambdaFrame) Find(name string) Var {
 	return nil // not found, maybe global
 }
 
-func (n LambdaFrame) DoCapture(name string, v Var) {
+func (n *Lambda) DoCapture(name string, v Var) {
 	if v := n.Find(name); v != nil {
 		return // already captured
 	}
 	c := Capture{
 		Name: name,
 		Src:  v,
-		Dst:  &LocVar{len(n.Caps)},
+		Dst:  n.NewVariable(),
 	}
 	n.Caps = append(n.Caps, c)
 	Log("lambdaframe: docapture:", c)

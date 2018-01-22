@@ -74,9 +74,10 @@ func (n *Call) PrintTo(w io.Writer) {
 
 // Lambda is a lambda expression node, e.g.: 'x->x*x'
 type Lambda struct {
-	Args []*Ident
-	Caps []Capture // filled in by resolve
-	Body Node
+	Args   []*Ident
+	Caps   []Capture // filled in by resolve
+	NumVar int
+	Body   Node
 }
 
 type Capture struct {
@@ -100,6 +101,12 @@ func (n *Lambda) PrintTo(w io.Writer) {
 
 	n.Body.PrintTo(w)
 	fmt.Fprint(w, ")")
+}
+
+func (n *Lambda) NewVariable() Var {
+	v := &LocVar{Index: n.NumVar}
+	n.NumVar++
+	return v
 }
 
 func (c Capture) String() string {
