@@ -2,15 +2,38 @@ package ast
 
 import (
 	"fmt"
+	"log"
 )
 
 func Resolve(n Node) {
+	gather(n, Frames{})
 	resolve(Frames{}, n)
 }
 
-func resolve(s Frames, n Node) {
-	Log("resolve", n)
+func gather(n Node, s Frames) {
 	switch n := n.(type) {
+	case *Assign:
+		gatherAssign(n, s)
+	case *Block:
+		gatherBlock(n, s)
+	case *Call:
+		gatherCall(n, s)
+	case *Cond:
+		gatherCond(n, s)
+	case *Ident:
+		gatherIdent(n, s)
+	case *Lambda:
+		gatherLambda(n, s)
+	case *Num: // nothing to do
+	default:
+		panic(unhandled(n))
+	}
+}
+
+func resolve(s Frames, n Node) {
+	switch n := n.(type) {
+	case *Assign:
+		resolveAssign(s, n)
 	case *Block:
 		resolveBlock(s, n)
 	case *Call:
@@ -27,10 +50,26 @@ func resolve(s Frames, n Node) {
 	}
 }
 
-func resolveCond(s Frames, n *Cond) {
-	resolve(s, n.Test)
-	resolve(s, n.If)
-	resolve(s, n.Else)
+// ---- Assign
+
+func gatherAssign(a *Assign, s Frames) {
+	a.LHS.Var = parentFrame(s).NewVariable()
+	gather(a.RHS, s)
+}
+
+func resolveAssign(s Frames, a *Assign) {
+	resolve(s, a.RHS)
+}
+
+// ---- Block
+
+func gatherBlock(b *Block, s Frames) {
+	s.Push(b)
+	defer s.Pop()
+
+	for _, stmt := range b.Stmts {
+		gather(stmt, s)
+	}
 }
 
 func resolveBlock(s Frames, b *Block) {
@@ -38,17 +77,7 @@ func resolveBlock(s Frames, b *Block) {
 	defer s.Pop()
 
 	for _, stmt := range b.Stmts {
-		if a, ok := stmt.(*Assign); ok {
-			a.LHS.Var = parentFrame(s).NewVariable()
-		}
-	}
-
-	for _, stmt := range b.Stmts {
-		if a, ok := stmt.(*Assign); ok {
-			resolve(s, a.RHS)
-		} else {
-			resolve(s, stmt)
-		}
+		resolve(s, stmt)
 	}
 }
 
@@ -56,11 +85,113 @@ func (b *Block) Find(name string) Var {
 	for _, stmt := range b.Stmts {
 		if a, ok := stmt.(*Assign); ok {
 			if a.LHS.Name == name {
+				assert(a.LHS.Var != nil)
 				return a.LHS.Var
 			}
 		}
 	}
 	return nil
+}
+
+// ---- Call
+
+func gatherCall(c *Call, s Frames) {
+	gather(c.F, s)
+	for _, a := range c.Args {
+		gather(a, s)
+	}
+}
+
+func resolveCall(s Frames, c *Call) {
+	resolve(s, c.F)
+	for _, a := range c.Args {
+		resolve(s, a)
+	}
+}
+
+// ---- Cond
+
+func gatherCond(n *Cond, s Frames) {
+	gather(n.Test, s)
+	gather(n.If, s)
+	gather(n.Else, s)
+}
+
+func resolveCond(s Frames, n *Cond) {
+	resolve(s, n.Test)
+	resolve(s, n.If)
+	resolve(s, n.Else)
+}
+
+// ---- Ident
+// Here be dragons.
+
+func gatherIdent(id *Ident, s Frames) {
+	// ??
+	name := id.Name
+	v, defScope := s.Find(name)
+	if v == nil {
+		return // not in parent, so not a capture
+	}
+
+	switch {
+	case defScope == -1:
+		// not found
+	case defScope == len(s)-1:
+		// argument
+	default:
+		// captured variable
+		// loop over frames, capture from defscope+1 to last, capture all the way
+		for i := defScope + 1; i < len(s); i++ {
+			if l, ok := s[i].(*Lambda); ok {
+				v := s[i-1].Find(name)
+				assert(v != nil)
+				l.DoCapture(name, v)
+			}
+		}
+		//v := s[len(s)-1].Find(name)
+		//assert(v != nil)
+		//id.Var = v
+	}
+}
+
+func resolveIdent(s Frames, id *Ident) {
+	name := id.Name
+	v, defScope := s.Find(name)
+	if v == nil {
+		return // not found
+	}
+
+	switch {
+	case defScope == -1:
+		// not found
+	case defScope == len(s)-1: // directly under parent
+		id.Var = v
+	default: // captured variable
+		v := s[len(s)-1].Find(name)
+		assert(v != nil)
+		id.Var = v
+	}
+}
+
+// ---- Lambda
+
+func gatherLambda(n *Lambda, s Frames) {
+	s.Push(n)
+	defer s.Pop()
+
+	for i, a := range n.Args {
+		a.Var = &Arg{Index: i}
+	}
+	fmt.Println("lambda: gathered, args=", n.Args)
+	gather(n.Body, s)
+}
+
+func resolveLambda(s Frames, n *Lambda) {
+	s.Push(n)
+	defer s.Pop()
+
+	resolve(s, n.Body)
 }
 
 func parentFrame(s Frames) *Lambda {
@@ -75,70 +206,13 @@ func parentFrame(s Frames) *Lambda {
 	panic("no parent frame")
 }
 
-func resolveCall(s Frames, c *Call) {
-	Log("resolveCall", c)
-	resolve(s, c.F)
-	for _, a := range c.Args {
-		resolve(s, a)
-	}
-}
-
-func resolveIdent(s Frames, id *Ident) {
-	Log("resolveIdent", id)
-
-	// defScope: where ident was defined
-	// usingScope: where ident is being used:
-	// 	x ->           // defScope of x
-	// 		y ->
-	//  		x + y  // usingScope of x
-
-	name := id.Name
-	v, defScope := s.Find(name)
-	if v == nil {
-		Log("resolveIdent: not found", id)
-		return
-	}
-
-	switch {
-	case defScope == -1: // not found
-		// leave open for now, compile will search for global
-	case defScope == len(s)-1: // directly under parent
-		id.Var = v
-	//case defScope == 0: // global
-	//	id.Var = v
-	default: // captured variable
-		// loop over frames, capture from defscope+1 to last, capture all the way
-		for i := defScope + 1; i < len(s); i++ {
-			if l, ok := s[i].(*Lambda); ok {
-				v := s[i-1].Find(name)
-				l.DoCapture(name, v)
-			}
-		}
-		v := s[len(s)-1].Find(name)
-		assert(v != nil)
-		id.Var = v
-	}
-}
-
-func resolveLambda(s Frames, n *Lambda) {
-	Log("resolveLambda", n)
-	// first define the arguments
-	for i, a := range n.Args {
-		a.Var = &Arg{Index: i}
-	}
-
-	// then resolve the body
-	s.Push(n)
-	defer s.Pop()
-	resolve(s, n.Body)
-}
-
 func (n *Lambda) Find(name string) Var {
 	Log("lambdaframe: find", name)
 	for _, a := range n.Args {
 		if name == a.Name {
 			Log("lambdaframe: found", a.Var)
-			return a.Var.(Var)
+			assert(a.Var != nil)
+			return a.Var
 		}
 	}
 	for _, c := range n.Caps {
@@ -153,6 +227,7 @@ func (n *Lambda) Find(name string) Var {
 }
 
 func (n *Lambda) DoCapture(name string, v Var) {
+	assert(v != nil)
 	if v := n.Find(name); v != nil {
 		return // already captured
 	}
@@ -164,6 +239,8 @@ func (n *Lambda) DoCapture(name string, v Var) {
 	n.Caps = append(n.Caps, c)
 	Log("lambdaframe: docapture:", c)
 }
+
+// ---------
 
 type Frame interface {
 	Find(name string) Var
@@ -199,8 +276,8 @@ func (f *Frames) Find(name string) (Var, int) {
 }
 
 func Log(action string, arg interface{}) {
-	//log.SetFlags(0)
-	//log.Printf("%s: %#v\n", action, arg)
+	log.SetFlags(0)
+	log.Printf("%s: %#v\n", action, arg)
 }
 
 func unhandled(x interface{}) string {

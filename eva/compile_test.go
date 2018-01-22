@@ -1,6 +1,7 @@
 package eva
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -79,20 +80,25 @@ func TestEval(t *testing.T) {
 		// block, assign
 		{`(()->{x=1;x})()`, 1.0},
 		{`(()->{x=1;y=x+2;x+y})()`, 4.0},
+		{`f=(x,y)->x+y; f(1,2)`, 3.0},
 		{`(()->{f=(x,y)->x+y; f(1,2)})()`, 3.0},
 		{`{x=1;x}`, 1.0},
 		{`{{{x=1;x}}}`, 1.0},
 		{`{x=1;y=x+2;x+y}`, 4.0},
 		{`{f=(x,y)->x+y; f(1,2)}`, 3.0},
-		//{`(()->{f=()->f(); f()})()`, 3.0},
 
 		// program
 		{`x=1;x`, 1.0},
 		{`max=(x,y)->x>y?x:y; max(1,2)`, 2.0},
+		{`id=x->x; id(2)`, 2.0},
 		{`max=(x,y)->x>y?x:y; max(2,1)`, 2.0},
+
+		// recursion
+		//{`fac=(n)->{n <= 1? n: n*fac(n-1)}; fac(6)`, 120},
 	}
 
 	for _, c := range cases {
+		fmt.Println("\n", c.src)
 		prog, err := Compile(strings.NewReader(c.src))
 		if err != nil || prog == nil {
 			t.Errorf("%v: have %v, %v", c.src, prog, err)
