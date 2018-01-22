@@ -19,7 +19,7 @@ func main() {
 			return // EOF
 		}
 
-		expr, err := ast.Parse(bytes.NewReader(src))
+		expr, err := ast.ParseExpr(bytes.NewReader(src))
 		if err != nil {
 			fmt.Println(err)
 			continue

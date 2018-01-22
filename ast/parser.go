@@ -13,9 +13,9 @@ import (
 	"github.com/barnex/se-lang/lex"
 )
 
-// Parse reads source text from src
-// and returns an Abstract Syntax Tree.
-func Parse(src io.Reader) (_ Node, e error) {
+// ParseExpr reads source text from src
+// and returns an Abstract Syntax Tree for a single expression.
+func ParseExpr(src io.Reader) (_ Node, e error) {
 	defer func() {
 		switch err := recover().(type) {
 		default:
@@ -28,6 +28,26 @@ func Parse(src io.Reader) (_ Node, e error) {
 	}()
 	p := parser{lex: *lex.NewLexer(src)}
 	return p.parse(), nil
+}
+
+// ParseProgram reads source text from src
+// and returns an Abstract Syntax Tree for a program.
+func ParseProgram(src io.Reader) (_ *Block, e error) {
+	defer func() {
+		switch err := recover().(type) {
+		default:
+			panic(err) // resume
+		case nil:
+			// no error
+		case se.Error:
+			e = err
+		}
+	}()
+	p := &parser{lex: *lex.NewLexer(src)}
+	p.init()
+	b := &Block{p.parseInnerBlock()}
+	p.Expect(lex.TEOF)
+	return b, nil
 }
 
 // The syntax is LL(4),
@@ -81,13 +101,17 @@ func (p *parser) parseExpr() Node {
 //  | { stmt; ... }
 func (p *parser) parseBlock() Node {
 	p.Expect(lex.TLBrace)
-	stmt := []Node{p.parseStmt()}
+	stmt := p.parseInnerBlock()
+	p.Expect(lex.TRBrace)
+	return &Block{stmt}
+}
 
+func (p *parser) parseInnerBlock() []Node {
+	stmt := []Node{p.parseStmt()}
 	for p.Accept(lex.TSemicol) {
 		stmt = append(stmt, p.parseStmt())
 	}
-	p.Expect(lex.TRBrace)
-	return &Block{stmt}
+	return stmt
 }
 
 // stmt:

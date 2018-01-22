@@ -17,7 +17,7 @@ func Eval(p Prog) (Value, error) {
 }
 
 func Compile(src io.Reader) (Prog, error) {
-	n, err := ast.Parse(src)
+	n, err := ast.ParseProgram(src)
 	if err != nil {
 		return nil, err
 	}

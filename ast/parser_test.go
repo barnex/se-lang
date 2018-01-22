@@ -81,6 +81,7 @@ func TestParseExpr(t *testing.T) {
 
 		// block
 		{`{x}`, block(x)},
+		{`{{x}}`, block(block(x))},
 		{`{x=1}`, block(assign(x, num(1)))},
 		{`{x=1;x}`, block(assign(x, num(1)), x)},
 	}
@@ -138,47 +139,8 @@ func TestParseError(t *testing.T) {
 	}
 }
 
-// Parse expressions and turn the AST's to strings.
-func TestParseToString(t *testing.T) {
-
-	cases := []struct {
-		in   string
-		want string
-	}{
-	//{` 1 `, `1`},
-	//{` (1) `, `1`},
-	//{`f`, `f`},
-	//{`f()`, `(f)`},
-	//{`f(x)`, `(f x)`},
-	//{`f((x))`, `(f x)`},
-	//{`(f)(x)`, `(f x)`},
-	//{`f(x)(y)`, `((f x) y)`},
-	////{`(f)(x,y)`, `(f (, x y))`},
-	//{`x+y`, `(+ x y)`},
-	//{`x*y`, `(* x y)`},
-	//{`a+b*c`, `(+ a (* b c))`},
-	//{`a*b+c`, `(+ (* a b) c)`},
-	//{`a*(b+c)`, `(* a (+ b c))`},
-	////{`x->x*x`, `(-> x (* x x))`},
-	////{`sum=(x,y)->(x+y)`, `(= sum (-> (, x y) (+ x y)))`},
-	////{`f=()->(3,4)`, `(= f (-> (,) (, 3 4)))`},
-	//{`()`, `(list)`},
-	}
-
-	for _, c := range cases {
-		have, err := parse(c.in)
-		if err != nil {
-			t.Errorf("%v: error: %v", c.in, err)
-			continue
-		}
-		if have := ToString(have); have != c.want {
-			t.Errorf("%v: have %v, want %v", c.in, have, c.want)
-		}
-	}
-}
-
 func parse(src string) (Node, error) {
-	return Parse(strings.NewReader(src))
+	return ParseExpr(strings.NewReader(src))
 }
 
 func num(v float64) Node                   { return &Num{v} }
