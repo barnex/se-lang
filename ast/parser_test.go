@@ -61,6 +61,9 @@ func TestParseExpr(t *testing.T) {
 		{`2-1`, call(sub, num(2), num(1))},
 		//{`3%4`, call(ident("mod"), num(3), num(4))},
 
+		// cond
+		{`x<y?x+y:0`, &Cond{call(ident("lt"), x, y), call(add, x, y), num(0)}},
+
 		// random
 		{`(f)(x)`, call(f, x)},
 		{`f(x)(y)`, call(call(f, x), y)},

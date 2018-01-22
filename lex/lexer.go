@@ -58,8 +58,12 @@ func (l *Lexer) Next() Token {
 		ttype = TComma
 	case '/':
 		ttype = TDiv
+	case ':':
+		ttype = TColon
 	case ';':
 		ttype = TSemicol
+	case '?':
+		ttype = TQuestion
 	case '{':
 		ttype = TLBrace
 	case '}':

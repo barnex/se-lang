@@ -11,19 +11,26 @@ func Resolve(n Node) {
 func resolve(s Frames, n Node) {
 	Log("resolve", n)
 	switch n := n.(type) {
+	case *Block:
+		resolveBlock(s, n)
 	case *Call:
 		resolveCall(s, n)
+	case *Cond:
+		resolveCond(s, n)
 	case *Ident:
 		resolveIdent(s, n)
 	case *Lambda:
 		resolveLambda(s, n)
-	case *Num:
-		// nothing to do
-	case *Block:
-		resolveBlock(s, n)
+	case *Num: // nothing to do
 	default:
 		panic(unhandled(n))
 	}
+}
+
+func resolveCond(s Frames, n *Cond) {
+	resolve(s, n.Test)
+	resolve(s, n.If)
+	resolve(s, n.Else)
 }
 
 func resolveBlock(s Frames, b *Block) {

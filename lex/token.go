@@ -24,64 +24,68 @@ func (t Token) String() string {
 type TType int
 
 const (
-	TError   TType = iota
-	TAdd           // +
-	TAnd           // &&
-	TAssign        // =
-	TComma         // ,
-	TDiv           // /
-	TEOF           // end-of-file
-	TEq            // ==
-	TGe            // >=
-	TGt            // >
-	TIdent         // identifer
-	TLBrace        // {
-	TLParen        // (
-	TLambda        // ->
-	TLe            // <=
-	TLt            // <
-	TMinus         // -
-	TMod           // %
-	TMul           // *
-	TNEq           // !=
-	TNot           // !
-	TNum           // number
-	TOr            // ||
-	TQuote         // '
-	TRBrace        // }
-	TRParen        // )
-	TSemicol       // ;
-	TString        // string
+	TError    TType = iota
+	TAdd            // +
+	TAnd            // &&
+	TAssign         // =
+	TColon          // :
+	TComma          // ,
+	TDiv            // /
+	TEOF            // end-of-file
+	TEq             // ==
+	TGe             // >=
+	TGt             // >
+	TIdent          // identifer
+	TLBrace         // {
+	TLParen         // (
+	TLambda         // ->
+	TLe             // <=
+	TLt             // <
+	TMinus          // -
+	TMod            // %
+	TMul            // *
+	TNEq            // !=
+	TNot            // !
+	TNum            // number
+	TOr             // ||
+	TQuestion       // ?
+	TQuote          // '
+	TRBrace         // }
+	TRParen         // )
+	TSemicol        // ;
+	TString         // string
 )
 
 var ttypeString = map[TType]string{
-	TAdd:     "+",
-	TAnd:     "&&",
-	TAssign:  "=",
-	TComma:   ",",
-	TDiv:     "/",
-	TEOF:     "EOF",
-	TEq:      "==",
-	TGe:      ">=",
-	TGt:      ">",
-	TIdent:   "identifer",
-	TLBrace:  "{",
-	TLParen:  "(",
-	TLambda:  "->",
-	TLe:      "<=",
-	TLt:      "<",
-	TMinus:   "-",
-	TMod:     "%",
-	TMul:     "*",
-	TNEq:     "!=",
-	TNot:     "!",
-	TNum:     "number",
-	TOr:      "||",
-	TQuote:   "'",
-	TRBrace:  "}",
-	TRParen:  ")",
-	TSemicol: ";",
-	TString:  "string",
+	TAdd:      "+",
+	TAnd:      "&&",
+	TAssign:   "=",
+	TColon:    ":",
+	TComma:    ",",
+	TDiv:      "/",
+	TEOF:      "EOF",
+	TEq:       "==",
+	TGe:       ">=",
+	TGt:       ">",
+	TIdent:    "identifer",
+	TLBrace:   "{",
+	TLParen:   "(",
+	TLambda:   "->",
+	TLe:       "<=",
+	TLt:       "<",
+	TMinus:    "-",
+	TMod:      "%",
+	TMul:      "*",
+	TNEq:      "!=",
+	TNot:      "!",
+	TNum:      "number",
+	TOr:       "||",
+	TQuestion: "?",
+	TQuote:    "'",
+	TRBrace:   "}",
+	TRParen:   ")",
+	TSemicol:  ";",
+	TString:   "string",
 }
 
 func (t TType) String() string {

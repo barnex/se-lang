@@ -48,6 +48,7 @@ func TestLex(t *testing.T) {
 		{`a&&b||!c`, []Token{{TIdent, "a"}, {TAnd, "&&"}, {TIdent, "b"}, {TOr, "||"}, {TNot, "!"}, {TIdent, "c"}}},
 		{`x=1;x`, []Token{{TIdent, "x"}, {TAssign, "="}, {TNum, "1"}, {TSemicol, ";"}, {TIdent, "x"}}},
 		{`'x`, []Token{{TQuote, "'"}, {TIdent, "x"}}},
+		{`x?1:2`, []Token{{TIdent, "x"}, {TQuestion, "?"}, {TNum, "1"}, {TColon, ":"}, {TNum, "2"}}},
 	}
 
 	for _, c := range cases {

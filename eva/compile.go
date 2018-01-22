@@ -15,14 +15,16 @@ func compileExpr(n ast.Node) Prog {
 	switch n := n.(type) {
 	default:
 		panic(unhandled(n))
+	case *ast.Block:
+		return compileBlock(n)
 	case *ast.Call:
 		return compileCall(n)
+	case *ast.Cond:
+		return compileCond(n)
 	case *ast.Ident:
 		return compileIdent(n)
 	case *ast.Lambda:
 		return compileLambda(n)
-	case *ast.Block:
-		return compileBlock(n)
 	case *ast.Num:
 		return compileNum(n)
 	}
@@ -75,6 +77,29 @@ func compileAssign(n *ast.Assign) Assign {
 func (a Assign) Exec(m *Machine) {
 	a.RHS.Exec(m)
 	a.LHS.SetToRA(m)
+}
+
+// -------- Cond
+
+type Cond struct {
+	Test, If, Else Prog
+}
+
+func compileCond(n *ast.Cond) *Cond {
+	return &Cond{
+		Test: compileExpr(n.Test),
+		If:   compileExpr(n.If),
+		Else: compileExpr(n.Else),
+	}
+}
+
+func (p *Cond) Exec(m *Machine) {
+	p.Test.Exec(m)
+	if m.RA().(bool) {
+		p.If.Exec(m)
+	} else {
+		p.Else.Exec(m)
+	}
 }
 
 // -------- Lambda

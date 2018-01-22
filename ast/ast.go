@@ -14,6 +14,16 @@ type Node interface {
 	PrintTo(w io.Writer)
 }
 
+// Assign is a declaration, e.g.: a=1
+type Assign struct {
+	LHS *Ident
+	RHS Node
+}
+
+func (n *Assign) PrintTo(w io.Writer) {
+	fmt.Fprint(w, n.LHS, lex.TAssign, n.RHS)
+}
+
 // Block is a list of statements, e.g.: {a=1; b}
 type Block struct {
 	Stmts []Node
@@ -28,14 +38,16 @@ func (n *Block) PrintTo(w io.Writer) {
 	fmt.Fprint(w, lex.TRBrace)
 }
 
-// Assign is a declaration, e.g.: a=1
-type Assign struct {
-	LHS *Ident
-	RHS Node
+type Cond struct {
+	Test, If, Else Node
 }
 
-func (n *Assign) PrintTo(w io.Writer) {
-	fmt.Fprint(w, n.LHS, lex.TAssign, n.RHS)
+func (n *Cond) PrintTo(w io.Writer) {
+	n.Test.PrintTo(w)
+	fmt.Fprint(w, lex.TQuestion)
+	n.If.PrintTo(w)
+	fmt.Fprint(w, lex.TColon)
+	n.Else.PrintTo(w)
 }
 
 // Num is a number Node, e.g.: '1'

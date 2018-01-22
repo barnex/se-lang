@@ -52,6 +52,7 @@ func (p *parser) parse() Node {
 // 	| expr1
 //  | lambda
 //  | block
+//  | cond
 func (p *parser) parseExpr() Node {
 	// peek for lambda: "()" or "(ident," or "ident->" or "(ident)->"
 	if p.HasPeek(lex.TLParen, lex.TRParen) ||
@@ -65,7 +66,15 @@ func (p *parser) parseExpr() Node {
 		return p.parseBlock()
 	}
 
-	return p.parseExpr1()
+	e := p.parseExpr1()
+	if p.Accept(lex.TQuestion) {
+		a := p.parseExpr()
+		p.Expect(lex.TColon)
+		b := p.parseExpr()
+		return &Cond{e, a, b}
+	} else {
+		return e
+	}
 }
 
 // block:

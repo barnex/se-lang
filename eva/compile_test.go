@@ -51,6 +51,13 @@ func TestEval(t *testing.T) {
 		{`1+1==2&&3<4`, true},
 		//{`1+2*3%4`, 3},
 
+		// cond
+		{`true? 1 : 2`, 1.0},
+		{`false? 1 : 2`, 2.0},
+		{`((x,y)->1+2==3? x : y)(111,222)`, 111.0},
+		{`((x,y)->x>y?x:y)(111,222)`, 222.0}, // max
+		{`((x,y)->x<y?x:y)(111,222)`, 111.0}, // min
+
 		// lambda
 		{`(x->x)(1)`, 1.0},                         // identity function
 		{`(()->7)()`, 7.0},                         // constant function
