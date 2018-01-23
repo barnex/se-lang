@@ -101,7 +101,7 @@ func (b *Block) Find(name string) Var {
 	for _, stmt := range b.Stmts {
 		if a, ok := stmt.(*Assign); ok {
 			if a.LHS.Name == name {
-				assert(a.LHS.Var != nil)
+				//assert(a.LHS.Var != nil)
 				return a.LHS.Var
 			}
 		}

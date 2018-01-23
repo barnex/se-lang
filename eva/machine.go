@@ -104,5 +104,5 @@ func (m *Machine) Grow(delta int) {
 }
 
 func Log(x ...interface{}) {
-	//fmt.Println(x...)
+	fmt.Println(x...)
 }
