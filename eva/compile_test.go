@@ -96,11 +96,11 @@ func TestEval(t *testing.T) {
 		// weird
 		//{`{add}(1,2)`, 3.0},
 		//{`{f=add;f}(1,2)`, 3.0},
+
 		// recursion
-		//this one gets captured, should not
-		//{`id=()->id(); id()`, nil},
 		{`fac=(n)->{n <= 1? n: n*fac(n-1)}; fac(6)`, 720.0},
 		{`fac=(n)->(n <= 1? n: n*fac(n-1)); fac(6)`, 720.0},
+		{`fib=(n)->(n<=2)?1:(fib(n-1)+fib(n-2)); fib(12)`, 144.0},
 	}
 
 	for _, c := range cases {
