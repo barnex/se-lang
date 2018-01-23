@@ -93,6 +93,9 @@ func TestEval(t *testing.T) {
 		{`id=x->x; id(2)`, 2.0},
 		{`max=(x,y)->x>y?x:y; max(2,1)`, 2.0},
 
+		// weird
+		//{`{add}(1,2)`, 3.0},
+		//{`{f=add;f}(1,2)`, 3.0},
 		// recursion
 		//this one gets captured, should not
 		//{`id=()->id(); id()`, nil},

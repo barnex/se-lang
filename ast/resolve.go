@@ -72,7 +72,7 @@ func resolve(s Frames, n Node) {
 // ---- Assign
 
 func gatherAssign(a *Assign, s Frames) {
-	a.LHS.Var = parentFrame(s).NewVariable()
+	a.LHS.Var = parentLambda(s).NewVariable()
 	gather(a.RHS, s)
 }
 
@@ -146,7 +146,7 @@ func resolveCond(s Frames, n *Cond) {
 // Here be dragons.
 
 func gatherIdent(id *Ident, s Frames) {
-	// ??
+
 	name := id.Name
 	v, defScope := s.Find(name)
 	if v == nil {
@@ -195,16 +195,16 @@ func resolveLambda(s Frames, n *Lambda) {
 	resolve(s, n.Body)
 }
 
-func parentFrame(s Frames) *Lambda {
-	if len(s) < 2 {
-		panic("no parent frame")
-	}
-	for i := len(s) - 2; i >= 0; i-- {
+func parentLambda(s Frames) *Lambda {
+	//if len(s) < 2 {
+	//	panic("no parent frame (1)")
+	//}
+	for i := len(s) - 1; i >= 0; i-- {
 		if l, ok := s[i].(*Lambda); ok {
 			return l
 		}
 	}
-	panic("no parent frame")
+	panic("no parent frame (2)")
 }
 
 func (n *Lambda) Find(name string) Var {

@@ -125,6 +125,9 @@ func (p *LambdaProg) Exec(m *Machine) {
 	v := LambdaValue{Body: p.Body, NumLocals: p.NumLocals}
 	for _, c := range p.Caps {
 		c.Exec(m)
+		if m.RA() == nil {
+			panic("capv==nil")
+		}
 		v.Capv = append(v.Capv, m.RA())
 	}
 	m.SetRA(&v)

@@ -21,7 +21,9 @@ type Assign struct {
 }
 
 func (n *Assign) PrintTo(w io.Writer) {
-	fmt.Fprint(w, n.LHS, lex.TAssign, n.RHS)
+	n.LHS.PrintTo(w)
+	fmt.Fprint(w, lex.TAssign)
+	n.RHS.PrintTo(w)
 }
 
 // Block is a list of statements, e.g.: {a=1; b}
@@ -61,15 +63,16 @@ func (n *Num) PrintTo(w io.Writer) {
 
 // Ident is an identifier Node, e.g.: 'sqrt'
 type Ident struct {
-	Name   string
-	Parent Node
-	Var    // filled in later by resolve
+	Name string
+	Var  // filled in later by resolve
 }
 
 func (n *Ident) PrintTo(w io.Writer) {
 	fmt.Fprint(w, n.Name)
 	if n.Var != nil {
 		fmt.Fprint(w, ":", n.Var)
+	} else {
+		fmt.Fprint(w, "??")
 	}
 }
 
@@ -98,6 +101,10 @@ type Capture struct {
 	Dst  Var // variable being captured to
 }
 
+func (c *Capture) String() string {
+	return fmt.Sprint(c.Dst, "=", c.Src)
+}
+
 func (n *Lambda) PrintTo(w io.Writer) {
 	fmt.Fprint(w, "(")
 	printList(w, n.Args)
@@ -119,10 +126,6 @@ func (n *Lambda) NewVariable() Var {
 	v := &LocVar{Index: n.NumVar}
 	n.NumVar++
 	return v
-}
-
-func (c Capture) String() string {
-	return fmt.Sprint(c.Dst, "=", c.Src)
 }
 
 // printList prints a slice whose elements implement Node, e.g.:

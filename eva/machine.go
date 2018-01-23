@@ -1,5 +1,7 @@
 package eva
 
+import "fmt"
+
 type Machine struct {
 	s  []Value
 	ra Value
@@ -66,5 +68,5 @@ func (m *Machine) Grow(delta int) {
 }
 
 func Log(x ...interface{}) {
-	// fmt.Println(x...)
+	fmt.Println(x...)
 }
