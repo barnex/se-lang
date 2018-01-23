@@ -18,5 +18,11 @@ max(1,2)                  // 2
 ```
 
 ```
-((f,a)->f(f(a))) ((x->x*x), 3) // apply square to 3, twice (result: 81)
+square = x -> x*x;
+twice = f -> (x -> f(f(x))); // applies a function twice
+(twice(square)) (3)          // 81
+```
+
+```
+((f,a)->f(f(a))) ((x->x*x), 3) // same as above
 ```
