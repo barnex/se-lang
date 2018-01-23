@@ -10,11 +10,12 @@ var prelude = pkg{
 	"gt":    fn2(gt),
 	"le":    fn2(le),
 	"lt":    fn2(lt),
+	"mod":   fn2(mod),
 	"mul":   fn2(mul),
-	"neq":   fn2(neq),
-	"or":    fn2(or),
 	"neg":   fn1(neg),
+	"neq":   fn2(neq),
 	"not":   fn1(not),
+	"or":    fn2(or),
 	"true":  &Const{true},
 }
 
@@ -35,7 +36,7 @@ func (f fn1) Apply(m *Machine) {
 	m.SetRA(box(f(a)))
 }
 
-func neg(a Value) Value { return -a.(float64) }
+func neg(a Value) Value { return -a.(int) }
 func not(a Value) Value { return !a.(bool) }
 
 type fn2 func(a, b Value) Value
@@ -50,14 +51,15 @@ func (f fn2) Apply(m *Machine) {
 	m.SetRA(box(f(a, b)))
 }
 
-func add(a, b Value) Value { return a.(float64) + b.(float64) }
+func add(a, b Value) Value { return a.(int) + b.(int) }
 func and(a, b Value) Value { return a.(bool) && b.(bool) }
 func eq(a, b Value) Value  { return a == b }
-func ge(a, b Value) Value  { return a.(float64) >= b.(float64) }
-func gt(a, b Value) Value  { return a.(float64) > b.(float64) }
-func le(a, b Value) Value  { return a.(float64) <= b.(float64) }
-func lt(a, b Value) Value  { return a.(float64) < b.(float64) }
-func mul(a, b Value) Value { return a.(float64) * b.(float64) }
+func ge(a, b Value) Value  { return a.(int) >= b.(int) }
+func gt(a, b Value) Value  { return a.(int) > b.(int) }
+func le(a, b Value) Value  { return a.(int) <= b.(int) }
+func lt(a, b Value) Value  { return a.(int) < b.(int) }
+func mul(a, b Value) Value { return a.(int) * b.(int) }
 func neq(a, b Value) Value { return a != b }
 func or(a, b Value) Value  { return a.(bool) || b.(bool) }
-func sub(a, b Value) Value { return a.(float64) - b.(float64) }
+func sub(a, b Value) Value { return a.(int) - b.(int) }
+func mod(a, b Value) Value { return a.(int) % b.(int) }

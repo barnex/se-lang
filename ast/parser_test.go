@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -143,7 +144,7 @@ func parse(src string) (Node, error) {
 	return ParseExpr(strings.NewReader(src))
 }
 
-func num(v float64) Node                   { return &Num{v} }
+func num(v float64) Node                   { return &Num{fmt.Sprint(v)} }
 func ident(n string) *Ident                { return &Ident{Name: n} }
 func call(f Node, args ...Node) Node       { return &Call{f, normalize(args)} }
 func lambda(args []*Ident, body Node) Node { return &Lambda{Args: args, Body: body} }

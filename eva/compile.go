@@ -2,6 +2,7 @@ package eva
 
 import (
 	"fmt"
+	"strconv"
 
 	se "github.com/barnex/se-lang"
 	"github.com/barnex/se-lang/ast"
@@ -245,7 +246,14 @@ func (c Const) Exec(m *Machine) {
 }
 
 func compileNum(n *ast.Num) Prog {
-	return &Const{n.Value}
+	if v, err := strconv.Atoi(n.Value); err == nil {
+		return &Const{v} // int
+	}
+	v, err := strconv.ParseFloat(n.Value, 64)
+	if err != nil {
+		panic(se.Errorf("%v", err))
+	}
+	return Const{v}
 }
 
 // --------

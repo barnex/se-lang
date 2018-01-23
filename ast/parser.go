@@ -7,7 +7,6 @@ package ast
 import (
 	"fmt"
 	"io"
-	"strconv"
 
 	se "github.com/barnex/se-lang"
 	"github.com/barnex/se-lang/lex"
@@ -242,11 +241,11 @@ func (p *parser) parseOperand() Node {
 // parse a number.
 func (p *parser) parseNum() Node {
 	tok := p.Expect(lex.TNum)
-	v, err := strconv.ParseFloat(tok.Value, 64)
-	if err != nil {
-		panic(p.SyntaxError(err.Error()))
-	}
-	return &Num{v}
+	//v, err := strconv.ParseFloat(tok.Value, 64)
+	//if err != nil {
+	//	panic(p.SyntaxError(err.Error()))
+	//}
+	return &Num{tok.Value}
 }
 
 // parse an identifier

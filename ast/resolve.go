@@ -2,7 +2,6 @@ package ast
 
 import (
 	"fmt"
-	"log"
 )
 
 // Resolve traverses the AST and populates the Var fields of all identifiers.
@@ -10,9 +9,7 @@ import (
 // Local variables are resolved to *LocVar.
 func Resolve(n Node) {
 	gather(n, Frames{})
-	fmt.Println("gathered:", ToString(n))
 	resolve(Frames{}, n)
-	fmt.Println("resolved:", ToString(n))
 }
 
 // gather traverses the AST and records all variable declarations.
@@ -184,7 +181,6 @@ func gatherLambda(n *Lambda, s Frames) {
 	for i, a := range n.Args {
 		a.Var = &Arg{Index: i}
 	}
-	fmt.Println("lambda: gathered, args=", n.Args)
 	gather(n.Body, s)
 }
 
@@ -277,8 +273,8 @@ func (f *Frames) Find(name string) (Var, int) {
 }
 
 func Log(action string, arg interface{}) {
-	log.SetFlags(0)
-	log.Printf("%s: %#v\n", action, arg)
+	//log.SetFlags(0)
+	//log.Printf("%s: %#v\n", action, arg)
 }
 
 func unhandled(x interface{}) string {

@@ -54,7 +54,7 @@ func (n *Cond) PrintTo(w io.Writer) {
 
 // Num is a number Node, e.g.: '1'
 type Num struct {
-	Value float64
+	Value string
 }
 
 func (n *Num) PrintTo(w io.Writer) {
