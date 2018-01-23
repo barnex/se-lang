@@ -5,11 +5,22 @@ import (
 	"log"
 )
 
+// Resolve traverses the AST and populates the Var fields of all identifiers.
+// Lambda arguments are resolved to *Arg.
+// Local variables are resolved to *LocVar.
 func Resolve(n Node) {
 	gather(n, Frames{})
+	fmt.Println("gathered:", ToString(n))
 	resolve(Frames{}, n)
+	fmt.Println("resolved:", ToString(n))
 }
 
+// gather traverses the AST and records all variable declarations.
+// The declaring identifier's Var field is set to a new variable. E.g.:
+// 	x -> x + 1
+//  |
+// 	\
+// 	 Arg{0}
 func gather(n Node, s Frames) {
 	switch n := n.(type) {
 	case *Assign:
@@ -30,6 +41,14 @@ func gather(n Node, s Frames) {
 	}
 }
 
+// resolve traverses the AST and resolves all identifiers that are not declarations.
+// It sets their Var field to that of the corresponding declaration.
+// gather must have been called first.
+// 	E.g.:
+// 	x -> x + 1
+//  |    |
+// 	\   /
+// 	 Arg{0}
 func resolve(s Frames, n Node) {
 	switch n := n.(type) {
 	case *Assign:
@@ -145,33 +164,15 @@ func gatherIdent(id *Ident, s Frames) {
 		for i := defScope + 1; i < len(s); i++ {
 			if l, ok := s[i].(*Lambda); ok {
 				v := s[i-1].Find(name)
-				assert(v != nil)
 				l.DoCapture(name, v)
 			}
 		}
-		//v := s[len(s)-1].Find(name)
-		//assert(v != nil)
-		//id.Var = v
 	}
 }
 
 func resolveIdent(s Frames, id *Ident) {
-	name := id.Name
-	v, defScope := s.Find(name)
-	if v == nil {
-		return // not found
-	}
-
-	switch {
-	case defScope == -1:
-		// not found
-	case defScope == len(s)-1: // directly under parent
-		id.Var = v
-	default: // captured variable
-		v := s[len(s)-1].Find(name)
-		assert(v != nil)
-		id.Var = v
-	}
+	v, _ := s.Find(id.Name)
+	id.Var = v
 }
 
 // ---- Lambda

@@ -58,7 +58,7 @@ func TestEval(t *testing.T) {
 		{`((x,y)->1+2==3? x : y)(111,222)`, 111.0},
 		{`((x,y)->x>y?x:y)(111,222)`, 222.0}, // max
 		{`((x,y)->x<y?x:y)(111,222)`, 111.0}, // min
-		//{`{x=111; y=222; x>y?x:y}`, 222.0},   // max, inlined
+		{`{x=111; y=222; x>y?x:y}`, 222.0},   // max, inlined
 
 		// lambda
 		{`(x->x)(1)`, 1.0},                         // identity function
@@ -94,7 +94,10 @@ func TestEval(t *testing.T) {
 		{`max=(x,y)->x>y?x:y; max(2,1)`, 2.0},
 
 		// recursion
+		//this one gets captured, should not
+		//{`id=()->id(); id()`, nil},
 		//{`fac=(n)->{n <= 1? n: n*fac(n-1)}; fac(6)`, 120},
+		//{`fac=(n)->(n <= 1? n: n*fac(n-1)); fac(6)`, 120},
 	}
 
 	for _, c := range cases {

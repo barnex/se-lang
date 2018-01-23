@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/barnex/se-lang/ast"
-	"github.com/barnex/se-lang/eva"
 )
 
 func main() {
@@ -19,19 +18,19 @@ func main() {
 			return // EOF
 		}
 
-		expr, err := ast.ParseExpr(bytes.NewReader(src))
+		expr, err := ast.ParseProgram(bytes.NewReader(src))
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 		ast.Resolve(expr)
-		fmt.Println(ast.ToString(expr))
+		//fmt.Println(ast.ToString(expr))
 
-		prog, err := eva.CompileAST(expr)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		fmt.Println(eva.Eval(prog))
+		//prog, err := eva.CompileAST(expr)
+		//if err != nil {
+		//	fmt.Println(err)
+		//	continue
+		//}
+		//fmt.Println(eva.Eval(prog))
 	}
 }
