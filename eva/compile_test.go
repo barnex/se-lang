@@ -99,8 +99,8 @@ func TestEval(t *testing.T) {
 		// recursion
 		//this one gets captured, should not
 		//{`id=()->id(); id()`, nil},
-		//{`fac=(n)->{n <= 1? n: n*fac(n-1)}; fac(6)`, 120},
-		//{`fac=(n)->(n <= 1? n: n*fac(n-1)); fac(6)`, 120},
+		{`fac=(n)->{n <= 1? n: n*fac(n-1)}; fac(6)`, 720.0},
+		{`fac=(n)->(n <= 1? n: n*fac(n-1)); fac(6)`, 720.0},
 	}
 
 	for _, c := range cases {

@@ -27,12 +27,12 @@ func (p pkg) Find(name string) Prog {
 type fn1 func(a Value) Value
 
 func (f fn1) Exec(m *Machine) {
-	m.SetRA(f)
+	m.SetRA(box(f))
 }
 
 func (f fn1) Apply(m *Machine) {
-	a := m.FromSP(-1)
-	m.SetRA(f(a))
+	a := m.FromSP(-1).Get()
+	m.SetRA(box(f(a)))
 }
 
 func neg(a Value) Value { return -a.(float64) }
@@ -41,13 +41,13 @@ func not(a Value) Value { return !a.(bool) }
 type fn2 func(a, b Value) Value
 
 func (f fn2) Exec(m *Machine) {
-	m.SetRA(f)
+	m.SetRA(box(f))
 }
 
 func (f fn2) Apply(m *Machine) {
-	a := m.FromSP(-1)
-	b := m.FromSP(-2)
-	m.SetRA(f(a, b))
+	a := m.FromSP(-1).Get()
+	b := m.FromSP(-2).Get()
+	m.SetRA(box(f(a, b)))
 }
 
 func add(a, b Value) Value { return a.(float64) + b.(float64) }

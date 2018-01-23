@@ -95,7 +95,7 @@ func compileCond(n *ast.Cond) *Cond {
 
 func (p *Cond) Exec(m *Machine) {
 	p.Test.Exec(m)
-	if m.RA().(bool) {
+	if m.RA().Get().(bool) {
 		p.If.Exec(m)
 	} else {
 		p.Else.Exec(m)
@@ -122,19 +122,19 @@ type LambdaProg struct {
 }
 
 func (p *LambdaProg) Exec(m *Machine) {
-	v := LambdaValue{Body: p.Body, NumLocals: p.NumLocals}
+	v := &LambdaValue{Body: p.Body, NumLocals: p.NumLocals}
 	for _, c := range p.Caps {
 		c.Exec(m)
-		if m.RA() == nil {
+		if m.RA().v == nil {
 			panic("capv==nil")
 		}
 		v.Capv = append(v.Capv, m.RA())
 	}
-	m.SetRA(&v)
+	m.SetRA(box(v))
 }
 
 type LambdaValue struct {
-	Capv      []Value
+	Capv      []Box
 	Body      Prog
 	NumLocals int
 }
@@ -142,15 +142,15 @@ type LambdaValue struct {
 var _ Applier = (*LambdaValue)(nil)
 
 func (p *LambdaValue) Apply(m *Machine) {
-	m.Push(m.BP())
+	m.Push(box(m.BP()))
 	m.SetBP(m.SP())
 	m.Grow(p.NumLocals)
 	for i, c := range p.Capv {
-		m.SetFromBP(i, c)
+		m.FromBP(i).Set(c.Get())
 	}
 	p.Body.Exec(m)
 	m.Grow(-p.NumLocals)
-	m.SetBP(m.Pop().(int))
+	m.SetBP(m.Pop().Get().(int))
 }
 
 // -------- Call
@@ -174,9 +174,9 @@ func (p *Call) Exec(m *Machine) {
 		p.Args[i].Exec(m) // eval argument
 		m.Push(m.RA())    // push argument
 	}
-	p.F.Exec(m)               // eval the function
-	m.RA().(Applier).Apply(m) // apply function to arguments
-	m.Grow(-len(p.Args))      // free arguments stack space
+	p.F.Exec(m)                     // eval the function
+	m.RA().Get().(Applier).Apply(m) // apply function to arguments
+	m.Grow(-len(p.Args))            // free arguments stack space
 }
 
 type Applier interface {
@@ -231,7 +231,7 @@ func (p fromBP) Exec(m *Machine) {
 }
 
 func (p fromBP) SetToRA(m *Machine) {
-	m.SetFromBP(p.Offset, m.RA())
+	m.FromBP(p.Offset).Set(m.RA().Get())
 }
 
 // -------- Const
@@ -241,7 +241,7 @@ type Const struct {
 }
 
 func (c Const) Exec(m *Machine) {
-	m.SetRA(c.v)
+	m.SetRA(box(c.v))
 }
 
 func compileNum(n *ast.Num) Prog {
